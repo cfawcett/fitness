@@ -46,7 +46,7 @@ func (r *GymSetRepo) CountByActivityID(activityID uint64) (int64, error) {
 	return count, nil
 }
 
-func (r *GymSetRepo) GetPopulatedExercises(activityID uint) ([]PopulatedExercise, error) {
+func (r *GymSetRepo) GetPopulatedExercises(activityID uint) ([]PopulatedExercise[GymSet], error) {
 	var allSets []GymSet
 	err := r.DB.Model(&GymSet{}).
 		Preload("ExerciseDefinition").
@@ -59,7 +59,7 @@ func (r *GymSetRepo) GetPopulatedExercises(activityID uint) ([]PopulatedExercise
 	}
 
 	// Process the flat list into the grouped structure.
-	var result []PopulatedExercise
+	var result []PopulatedExercise[GymSet]
 	// Start with the first exercise
 	currentExerciseID := allSets[0].ExerciseDefinitionID
 	currentSets := []GymSet{}
@@ -67,7 +67,7 @@ func (r *GymSetRepo) GetPopulatedExercises(activityID uint) ([]PopulatedExercise
 	for _, set := range allSets {
 		if set.ExerciseDefinitionID != currentExerciseID {
 			// New exercise found, save the previous one
-			result = append(result, PopulatedExercise{
+			result = append(result, PopulatedExercise[GymSet]{
 				ExerciseID:   currentExerciseID,
 				ExerciseName: currentSets[0].ExerciseDefinition.Name,
 				Sets:         currentSets,
@@ -79,7 +79,7 @@ func (r *GymSetRepo) GetPopulatedExercises(activityID uint) ([]PopulatedExercise
 		currentSets = append(currentSets, set)
 	}
 	// Append the very last group
-	result = append(result, PopulatedExercise{
+	result = append(result, PopulatedExercise[GymSet]{
 		ExerciseID:   currentExerciseID,
 		ExerciseName: currentSets[0].ExerciseDefinition.Name,
 		Sets:         currentSets,

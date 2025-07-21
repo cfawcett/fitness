@@ -26,3 +26,12 @@ func (r *UserRepo) GetUserByAuthID(authID string) (*User, error) {
 	}
 	return &user, nil
 }
+
+func (r *UserRepo) GetUserById(id uint64) (*User, error) {
+	var user User
+	result := r.DB.Where("id = ?", id).First(&user)
+	if result.Error != nil {
+		return nil, result.Error
+	}
+	return &user, nil
+}

@@ -23,10 +23,14 @@ func getThemeForMilestone(count int) string {
 }
 
 // UserHandler for our logged-in user page.
-func UserHandler(activityRepo *database.ActivityRepo) gin.HandlerFunc {
+func UserHandler(activityRepo *database.ActivityRepo, userRepo *database.UserRepo) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 
-		sessionUser := sessions.Default(ctx).Get("user").(database.User)
+		sessionUserId := sessions.Default(ctx).Get("user").(uint)
+		sessionUser, err := userRepo.GetUserById(uint64(sessionUserId))
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+		}
 		session := sessions.Default(ctx)
 		activeID := session.Get("active_workout_id")
 

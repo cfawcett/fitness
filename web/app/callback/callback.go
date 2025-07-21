@@ -5,6 +5,7 @@ import (
 	"fitness/platform/database"
 	"fitness/platform/models"
 	"net/http"
+	"time"
 
 	"gorm.io/gorm"
 
@@ -64,10 +65,21 @@ func Handler(auth *authenticator.Authenticator, userRepo *database.UserRepo) gin
 			}
 		}
 
+		if user.CreatedAt.Location() != time.UTC {
+			user.CreatedAt = user.CreatedAt.UTC()
+			println("created")
+		}
+		if user.UpdatedAt.Location() != time.UTC {
+			user.UpdatedAt = user.UpdatedAt.UTC()
+			println("updated")
+		}
+
 		session.Set("access_token", token.AccessToken)
-		session.Set("user", user)
+		session.Set("user", user.ID)
+
 		if err := session.Save(); err != nil {
 			ctx.String(http.StatusInternalServerError, err.Error())
+			println(err.Error())
 			return
 		}
 

@@ -1,8 +1,10 @@
 package workout
 
 import (
+	"errors"
 	"fitness/platform/database"
 	"fmt"
+	"gorm.io/gorm"
 	"log"
 	"net/http"
 	"net/url"
@@ -15,9 +17,32 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func CreateHandler(activityRepo *database.ActivityRepo) gin.HandlerFunc {
+// CreateHandler handles the POST /workouts/new request
+func CreateHandler(activityRepo *database.ActivityRepo, userRepo *database.UserRepo) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		sessionUser := sessions.Default(ctx).Get("user").(database.User)
+		session := sessions.Default(ctx)
+		activeidInterface := session.Get("active_workout_id")
+		discard := ctx.Query("discard") == "true" // Check for the discard confirmation
+
+		if activeidInterface != nil && !discard {
+			activeID := activeidInterface.(uint)
+
+			returnURL := fmt.Sprintf("/workouts/%d/edit", activeID)
+			discardAndStartNewUrl := "/workouts/new?discard=true"
+
+			ctx.HTML(http.StatusOK, "_create_workout_confirm.html", gin.H{
+				"DiscardURL": discardAndStartNewUrl,
+				"ReturnURL":  returnURL,
+			})
+			return
+		}
+
+		sessionUserId := session.Get("user").(uint)
+		sessionUser, err := userRepo.GetUserById(uint64(sessionUserId))
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+			return
+		}
 
 		newActivity := &database.Activity{
 			UserID:       sessionUser.ID,
@@ -31,19 +56,31 @@ func CreateHandler(activityRepo *database.ActivityRepo) gin.HandlerFunc {
 			ctx.String(http.StatusInternalServerError, err.Error())
 			return
 		}
-		session := sessions.Default(ctx)
+		if activeidInterface != nil {
+			if err := activityRepo.DeleteActivity(activeidInterface.(uint)); err != nil {
+				ctx.String(http.StatusInternalServerError, err.Error())
+			}
+		}
+
 		session.Set("active_workout_id", newActivity.ID)
-		session.Save()
+		if err := session.Save(); err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+			return
+		}
 
 		redirectURL := fmt.Sprintf("/workouts/%d/edit", newActivity.ID)
-		ctx.Header("HX-Redirect", redirectURL)
+		ctx.Header("HX-Redirect", redirectURL) // htmx will see this header and redirect
 		ctx.Status(http.StatusOK)
 	}
 }
 
-func ViewHandler(activityRepo *database.ActivityRepo, gymSetRepo *database.GymSetRepo, exerciseRepo *database.ExerciseRepo) gin.HandlerFunc {
+func ViewHandler(activityRepo *database.ActivityRepo, gymSetRepo *database.GymSetRepo, exerciseRepo *database.ExerciseRepo, userRepo *database.UserRepo) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		sessionUser := sessions.Default(ctx).Get("user").(database.User)
+		sessionUserId := sessions.Default(ctx).Get("user").(uint)
+		sessionUser, err := userRepo.GetUserById(uint64(sessionUserId))
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+		}
 		idStr := ctx.Param("id")
 		id, err := strconv.ParseUint(idStr, 10, 64)
 		if err != nil {
@@ -71,9 +108,13 @@ func ViewHandler(activityRepo *database.ActivityRepo, gymSetRepo *database.GymSe
 	}
 }
 
-func EditHandler(activityRepo *database.ActivityRepo, gymSetRepo *database.GymSetRepo, exerciseRepo *database.ExerciseRepo) gin.HandlerFunc {
+func EditHandler(activityRepo *database.ActivityRepo, gymSetRepo *database.GymSetRepo, exerciseRepo *database.ExerciseRepo, userRepo *database.UserRepo, draftRepo *database.DraftGymSetRepo) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
-		sessionUser := sessions.Default(ctx).Get("user").(database.User)
+		sessionUserId := sessions.Default(ctx).Get("user").(uint)
+		sessionUser, err := userRepo.GetUserById(uint64(sessionUserId))
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, err.Error())
+		}
 		idStr := ctx.Param("id")
 		id, err := strconv.ParseUint(idStr, 10, 64)
 		if err != nil {
@@ -89,15 +130,31 @@ func EditHandler(activityRepo *database.ActivityRepo, gymSetRepo *database.GymSe
 
 		allExercises, _ := exerciseRepo.GetExerciseList()
 
-		populatedExercises, _ := gymSetRepo.GetPopulatedExercises(activity.ID)
+		//Does draft exist for this activity? if yes, give it the draft list, if no, give it the actual list
 
-		ctx.HTML(http.StatusOK, "edit-workout.html", gin.H{
-			"Activity":           activity,
-			"PopulatedExercises": populatedExercises, // Pass the clean data
-			"AllExercises":       allExercises,
-			"NextExerciseIndex":  len(populatedExercises),
-			"User":               sessionUser,
-		})
+		draftExercises, err := draftRepo.GetPopulatedDraftExercises(activity.ID)
+		if err == nil {
+			ctx.HTML(http.StatusOK, "edit-workout.html", gin.H{
+				"Activity":           activity,
+				"PopulatedExercises": draftExercises,
+				"AllExercises":       allExercises,
+				"NextExerciseIndex":  len(draftExercises),
+				"User":               sessionUser,
+			})
+		} else if errors.Is(err, gorm.ErrRecordNotFound) {
+			println("no draft sets found")
+			savedExercises, err := gymSetRepo.GetPopulatedExercises(activity.ID)
+			if err != nil {
+				ctx.String(http.StatusInternalServerError, "could not process workout sets")
+			}
+			ctx.HTML(http.StatusOK, "edit-workout.html", gin.H{
+				"Activity":           activity,
+				"PopulatedExercises": savedExercises,
+				"AllExercises":       allExercises,
+				"NextExerciseIndex":  len(savedExercises),
+				"User":               sessionUser,
+			})
+		}
 	}
 }
 
@@ -389,20 +446,24 @@ func AddExerciseToFormHandler(activityRepo *database.ActivityRepo, gymSetRepo *d
 	}
 }
 
-func ExerciseInfoHandler(exerciseRepo *database.ExerciseRepo, gymSetRepo *database.GymSetRepo) gin.HandlerFunc {
-	return func(c *gin.Context) {
+func ExerciseInfoHandler(exerciseRepo *database.ExerciseRepo, gymSetRepo *database.GymSetRepo, userRepo *database.UserRepo) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
 		// Get IDs
-		sessionUser := sessions.Default(c).Get("user").(database.User)
-		exerciseID, err := strconv.ParseUint(c.Param("exerciseID"), 10, 64)
+		sessionUserId := sessions.Default(ctx).Get("user").(uint)
+		sessionUser, err := userRepo.GetUserById(uint64(sessionUserId))
 		if err != nil {
-			c.String(http.StatusBadRequest, "Invalid Exercise ID")
+			ctx.String(http.StatusInternalServerError, err.Error())
+		}
+		exerciseID, err := strconv.ParseUint(ctx.Param("exerciseID"), 10, 64)
+		if err != nil {
+			ctx.String(http.StatusBadRequest, "Invalid Exercise ID")
 			return
 		}
 
 		// Fetch data
 		exercise, err := exerciseRepo.GetExerciseByID(uint(exerciseID))
 		if err != nil {
-			c.String(http.StatusNotFound, "Exercise not found")
+			ctx.String(http.StatusNotFound, "Exercise not found")
 			return
 		}
 
@@ -412,7 +473,7 @@ func ExerciseInfoHandler(exerciseRepo *database.ExerciseRepo, gymSetRepo *databa
 			// This will log the actual database error to your console
 			log.Printf("Error fetching exercise history: %v", err)
 			// Inform the user something went wrong
-			c.String(http.StatusInternalServerError, "Could not fetch exercise history.")
+			ctx.String(http.StatusInternalServerError, "Could not fetch exercise history.")
 			return
 		}
 
@@ -440,9 +501,9 @@ func ExerciseInfoHandler(exerciseRepo *database.ExerciseRepo, gymSetRepo *databa
 		}
 		// --- End of grouping logic ---
 
-		activityID := c.Query("activityID")
+		activityID := ctx.Query("activityID")
 
-		c.HTML(http.StatusOK, "_exercise-info.html", gin.H{
+		ctx.HTML(http.StatusOK, "_exercise-info.html", gin.H{
 			"Exercise":       exercise,
 			"GroupedHistory": groupedHistory,
 			"ActivityID":     activityID, // Pass it to the template
@@ -604,7 +665,10 @@ func DiscardActivityHandler(activityRepo *database.ActivityRepo, gymSetRepo *dat
 			// Clear the active workout from session
 			session := sessions.Default(ctx)
 			session.Delete("active_workout_id")
-			session.Save()
+			err := session.Save()
+			if err != nil {
+				return
+			}
 
 			// Redirect to home page
 			ctx.Header("HX-Redirect", "/user")
