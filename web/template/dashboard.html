@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="{{ .Theme}}">
+<head>
+    <meta charset="UTF-8">
+    <title>Delta</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/polyline-encoded@0.0.9/Polyline.encoded.js"></script>
+
+    <style type="text/tailwindcss">
+        @layer base {
+            :root, [data-theme="default"] {
+                --color-primary: #0e7490; /* cyan-700 */
+                --color-primary-text: #ffffff; /* white */
+                --color-accent: #facc15; /* yellow-400 */
+                --color-accent-text: #164e63; /* cyan-900 */
+                --color-content-bg: #ffffff;
+                --color-page-bg: #f1f5f9; /* slate-100 */
+                --color-text-header: #1e293b; /* slate-800 */
+                --color-text-body: #64748b; /* slate-500 */
+            }
+            [data-theme="green-50"] {
+                --color-primary: #16a34a; /* green-600 */
+                --color-accent: #bef264; /* lime-300 */
+                --color-accent-text: #1a2e05; /* lime-950 */
+            }
+            [data-theme="purple-25"] {
+                --color-primary: #7e22ce; /* purple-700 */
+                --color-accent: #f0abfc; /* fuchsia-300 */
+                --color-accent-text: #580c5a; /* fuchsia-950 */
+            }
+            /* Add other milestone themes here (black-100, etc.) */
+        }
+    </style>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: 'var(--color-primary)',
+                        accent: 'var(--color-accent)',
+                        'content-bg': 'var(--color-content-bg)',
+                        'page-bg': 'var(--color-page-bg)',
+                    },
+                    textColor: {
+                        'primary-text': 'var(--color-primary-text)',
+                        'accent-text': 'var(--color-accent-text)',
+                        'header': 'var(--color-text-header)',
+                        'body': 'var(--color-text-body)',
+                    },
+                    borderColor: {
+                        primary: 'var(--color-primary)',
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-page-bg">
+
+<main class="p-4 pb-24">
+    <div class="bg-content-bg rounded-xl shadow-md p-6 border-b-4 border-primary">
+        <h1 class="text-2xl font-bold text-header">Welcome, {{ .User.nickname }}</h1>
+        <p class="text-body">This is the main content area.</p>
+        <p class="mb-4">You are logged in!
+        <a href="/logout" class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
+            Logout
+        </a>
+    </div>
+    {{range .Activities}}
+    {{template "activity" .}}
+    {{end}}
+</main>
+
+<div class="fixed bottom-0 left-0 w-full bg-primary flex justify-around items-center py-1 text-primary-text">
+
+    <div id="action-sheet" class="hidden absolute bottom-3/4 w-1/2 left-1/2 -translate-x-1/2 bg-white rounded-2xl p-6 shadow-xl z-50 transition-transform duration-300 ease-in-out transform">
+        <h3 class="text-lg font-bold text-slate-800 text-center mb-4">Add New Entry</h3>
+        <div class="space-y-3">
+            <button class="w-full text-left p-3 bg-slate-100 hover:bg-slate-200 rounded-lg font-semibold text-slate-700">Add Workout</button>
+            <button class="w-full text-left p-3 bg-slate-100 hover:bg-slate-200 rounded-lg font-semibold text-slate-700">Add Run</button>
+            <button class="w-full text-left p-3 bg-slate-100 hover:bg-slate-200 rounded-lg font-semibold text-slate-700">Add Measurement</button>
+            <button onclick="closeSheet()" class="w-full text-center mt-4 p-3 bg-red-500 hover:bg-red-600 rounded-lg font-bold text-white">Cancel</button>
+        </div>
+    </div>
+
+    <button class="w-1/5 flex flex-col items-center gap-1 p-1 bg-accent text-accent-text rounded-lg transition-colors">
+        <div class="h-6 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+            </svg>
+        </div>
+        <span class="text-xs font-bold">Home</span>
+    </button>
+
+    <button class="w-1/5 flex flex-col items-center gap-1 p-1 hover:bg-white/20 rounded-lg transition-colors">
+        <div class="h-6 flex items-center">
+            <svg class="size-10" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M8.09118 8H9.36418C9.72392 8.00873 10.0086 8.30725 10.0002 8.667V15.333C10.0086 15.6927 9.72392 15.9913 9.36418 16H8.09118C7.73144 15.9913 7.4468 15.6927 7.45518 15.333V14H5.63618C5.27644 13.9913 4.9918 13.6927 5.00018 13.333V10.667C4.9918 10.3073 5.27644 10.0087 5.63618 10H7.45518V8.667C7.4468 8.30725 7.73144 8.00873 8.09118 8Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path fill-rule="evenodd" clip-rule="evenodd" d="M15.9092 16H14.6362C14.2764 15.9913 13.9918 15.6927 14.0002 15.333V8.667C13.9918 8.30725 14.2764 8.00873 14.6362 8H15.9092C16.2689 8.00873 16.5536 8.30725 16.5452 8.667V10H18.3632C18.5361 10.0039 18.7004 10.0764 18.8199 10.2015C18.9393 10.3266 19.0042 10.4941 19.0002 10.667V13.333C19.0086 13.6927 18.7239 13.9913 18.3642 14H16.5452V15.333C16.5536 15.6927 16.2689 15.9913 15.9092 16Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M6.7052 14C6.7052 14.4142 7.04099 14.75 7.4552 14.75C7.86941 14.75 8.2052 14.4142 8.2052 14H6.7052ZM8.2052 10C8.2052 9.58579 7.86941 9.25 7.4552 9.25C7.04099 9.25 6.7052 9.58579 6.7052 10H8.2052ZM17.2962 10C17.2962 9.58579 16.9604 9.25 16.5462 9.25C16.132 9.25 15.7962 9.58579 15.7962 10H17.2962ZM15.7962 14C15.7962 14.4142 16.132 14.75 16.5462 14.75C16.9604 14.75 17.2962 14.4142 17.2962 14H15.7962ZM10.0002 11.25C9.58599 11.25 9.2502 11.5858 9.2502 12C9.2502 12.4142 9.58599 12.75 10.0002 12.75V11.25ZM14.0002 12.75C14.4144 12.75 14.7502 12.4142 14.7502 12C14.7502 11.5858 14.4144 11.25 14.0002 11.25V12.75ZM8.2052 14V10H6.7052V14H8.2052ZM15.7962 10V14H17.2962V10H15.7962ZM10.0002 12.75H14.0002V11.25H10.0002V12.75Z" fill="currentColor"/></svg>
+        </div>
+        <span class="text-xs font-medium">Workouts</span>
+    </button>
+
+    <button id="add-button" onclick="openSheet()" class="w-1/5 flex flex-col items-center">
+        <div class="p-3 bg-accent rounded-full shadow-lg transform -translate-y-4 hover:scale-110 transition-transform">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-7 text-accent-text">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            </svg>
+        </div>
+        <span class="text-xs font-medium -translate-y-2">Add</span>
+    </button>
+
+    <button class="w-1/5 flex flex-col items-center gap-1 p-1 hover:bg-white/20 rounded-lg transition-colors">
+        <div class="h-6 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+        </div>
+        <span class="text-xs font-medium">Parkrun</span>
+    </button>
+
+    <button class="w-1/5 flex flex-col items-center gap-1 p-1 hover:bg-white/20 rounded-lg transition-colors">
+        <div class="h-6 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="size-6"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg>
+        </div>
+        <span class="text-xs font-medium">Settings</span>
+    </button>
+</div>
+
+
+<script>
+    // Action Sheet JS (unchanged)
+    const sheet = document.getElementById('action-sheet');
+    const addButton = document.getElementById('add-button');
+    let isSheetOpen = false;
+
+    function openSheet() {
+        if (isSheetOpen) return;
+        isSheetOpen = true;
+
+        sheet.classList.remove('hidden');
+        setTimeout(() => {
+            sheet.classList.remove('translate-y-full');
+        }, 10);
+    }
+
+    function closeSheet() {
+        if (!isSheetOpen) return;
+        isSheetOpen = false;
+
+        sheet.classList.add('translate-y-full');
+        setTimeout(() => {
+            sheet.classList.add('hidden');
+        }, 300);
+    }
+
+    addButton.onclick = openSheet;
+
+    document.addEventListener('click', function(event) {
+        if (isSheetOpen && !sheet.contains(event.target) && !addButton.contains(event.target)) {
+            closeSheet();
+        }
+    });
+
+    sheet.classList.add('translate-y-full');
+
+</script>
+</body>
+</html>

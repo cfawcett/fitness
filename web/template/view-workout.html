@@ -1,0 +1,34 @@
+{{ template "header" . }}
+<body class="h-screen flex flex-col">
+<main id="content" class="flex-1 overflow-y-auto pb-24">
+    <div class="p-4">
+        <div class="flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold">{{ .Activity.Name}}</h1>
+                <p>Started: {{ .Activity.ActivityTime.Format "Jan 2, 2006 3:04 PM" }}</p>
+            </div>
+            <a href="/workouts/{{.Activity.ID}}/edit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded">
+                Edit Workout
+            </a>
+        </div>
+        <hr class="my-4">
+
+        <h2 class="text-xl font-semibold">Logged Sets</h2>
+
+        {{ range .PopulatedExercises }}
+        <div class="exercise-group mt-4 p-3 border rounded">
+            <h3 class="font-bold text-lg">{{ .ExerciseName }}</h3>
+            <ul class="list-disc list-inside ml-4">
+                {{ range .Sets }}
+                <li>Set {{ .SetNumber }}: {{ .Reps }} reps @ {{ .WeightKG }}kg</li>
+                {{ end }}
+            </ul>
+        </div>
+            
+        {{ else }}
+        <p>No sets logged for this workout yet.</p>
+        {{ end }}
+    </div>
+</main>
+</body>
+{{ template "navbar" . }}

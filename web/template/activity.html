@@ -1,0 +1,42 @@
+{{define "activity"}}
+<div class="bg-content-bg rounded-xl shadow-md p-6 border-b-8 border-primary mt-4">
+    <div class="flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-header">{{.Activitytype}}</h1>
+        {{/* You could add a conditional 'New!' badge here */}}
+    </div>
+    <p class="text-body">{{.Date}}</p>
+    <p class="text-body">Time: {{.Time}}</p>
+
+    <div id="map-{{.ID}}" class="h-96 w-full relative z-0"></div>
+
+    {{/* Conditionally show the PB message */}}
+    {{if .IsPB}}
+    <p class="font-bold text-body text-green-700">New PB at this event!</p>
+    {{end}}
+    <script>
+        (function() {
+            // All these variables now only exist inside this function.
+            const mapId = 'map-{{.ID}}';
+            const encodedPolyline = '{{ .EncodedPolyline }}';
+
+            // No more conflicts, even if you have 100 maps on the page.
+            const map = L.map(mapId, {
+                zoomControl: false
+            });
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(map);
+
+
+
+            const latlngs = L.Polyline.fromEncoded(encodedPolyline).getLatLngs();
+            const route = L.polyline(latlngs, { color: '#0e7490' }).addTo(map);
+
+            map.fitBounds(route.getBounds());
+        })(); // <-- The () at the end executes the function right away.
+    </script>
+</div>
+
+{{end}}
+

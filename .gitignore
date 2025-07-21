@@ -30,3 +30,36 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# Environment variables
+.env
+
+# Sensitive tokens/credentials
+strava_token.json
+
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+main
+
+# Dependency directories
+vendor/
+
+# IDE/project files
+*.iml
+.idea/
+
+# OS/Editor/Tooling files
+*.log
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
+
+# Node modules (if ever used)
+node_modules/

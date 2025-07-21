@@ -1,0 +1,10 @@
+<div x-data="{ show: true }" x-show="show" x-transition @keydown.escape.window="show = false" class="fixed inset-0 bg-zinc-900/75 flex items-center justify-center z-50 p-4">
+    <div @click.away="show = false" class="bg-zinc-800 rounded-xl shadow-2xl border border-cyan-700/50 p-6 w-full max-w-md text-zinc-200">
+        <div id="modal-content"
+             hx-get="/ui/exercise-list/{{.ActivityID}}"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+            <p class="text-center p-8">Loading exercises...</p>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,13 @@
+<div id="exercise-blocks-container">
+    {{ range $index, $exercise := .PopulatedExercises }}
+        {{ template "_exercise-block.html" (dict "Index" $index "ExerciseID" $exercise.ExerciseID "Sets" $exercise.Sets "AllExercises" $.AllExercises "ActivityID" $.Activity.ID) }}
+    {{ end }}
+</div>
+
+<button type="button"
+        hx-get="/ui/add-exercise-modal/{{.Activity.ID}}"
+        hx-target="#modal-container"
+        hx-swap="innerHTML"
+        class="mt-4 p-3 bg-cyan-700/20 border-2 border-dashed border-cyan-700/50 rounded-lg text-cyan-300 hover:border-cyan-600 hover:bg-cyan-700/30 transition-colors font-semibold">
+    + Add Exercise
+</button>

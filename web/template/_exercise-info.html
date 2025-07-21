@@ -1,0 +1,37 @@
+<div class="flex justify-between items-center mb-4">
+    <h3 class="text-xl font-semibold text-white">{{ .Exercise.Name }}</h3>
+    <button hx-get="/ui/exercise-list/{{.ActivityID}}" hx-target="#modal-content" hx-swap="innerHTML"
+            class="text-sm text-cyan-400 hover:text-cyan-300">
+        &larr; Back to list
+    </button>
+</div>
+
+<div class="space-y-4 max-h-96 overflow-y-auto pr-2">
+    <p class="mt-2 text-zinc-300">{{ .Exercise.Description }}</p>
+    <div class="bg-zinc-700 aspect-video my-4 rounded-lg"></div>
+
+    <button hx-post="/add-exercise-to-form/{{.ActivityID}}"
+            hx-vals='{"exercise_id": {{.Exercise.ID}}}'
+            hx-target="#exercise-blocks-container"
+            hx-swap="beforeend"
+            @click="show = false"
+            class="w-full p-2 bg-cyan-700 text-white font-bold rounded-lg hover:bg-cyan-600 transition-colors">
+        Add to Current Workout
+    </button>
+
+    <hr class="my-4 border-zinc-700">
+    <h4 class="font-semibold text-white">Your History</h4>
+
+    {{ range .GroupedHistory }}
+        <div class="mt-2 p-3 bg-zinc-900/50 border border-zinc-700 rounded-lg">
+            <p class="font-semibold text-sm text-zinc-300">{{ .Activity.ActivityTime.Format "Monday, 02 Jan 2006" }}</p>
+            <ul class="text-sm list-disc list-inside text-zinc-400 mt-1">
+                {{ range .Sets }}
+                    <li>Set {{ .SetNumber }}: {{ .Reps }} reps @ {{ .WeightKG }}kg</li>
+                {{ end }}
+            </ul>
+        </div>
+    {{ else }}
+        <p class="text-sm text-zinc-500">No previous history for this exercise.</p>
+    {{ end }}
+</div>
