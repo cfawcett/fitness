@@ -1,12 +1,15 @@
 package home
 
 import (
-	"net/http"
+	"fitness/web/components"
 
 	"github.com/gin-gonic/gin"
 )
 
 // Handler for our home page.
 func Handler(ctx *gin.Context) {
-	ctx.HTML(http.StatusOK, "home.html", nil)
+	err := components.HomePage().Render(ctx.Request.Context(), ctx.Writer)
+	if err != nil {
+		return
+	}
 }

@@ -27,7 +27,7 @@ END$$;
 		&Activity{},
 		&ExerciseDefinition{},
 		&GymSet{},
-		&DraftGymSet{},
+		&GymExercise{},
 	)
 	return err
 }
@@ -72,32 +72,23 @@ type ExerciseDefinition struct {
 	TargetMuscleGroup string `gorm:"size:100"`
 }
 
+type GymExercise struct {
+	gorm.Model
+	ActivityID           uint
+	ExerciseDefinitionID uint
+	SupersetPartnerID    uint
+
+	Activity           Activity           `gorm:"foreignKey:ActivityID"`
+	ExerciseDefinition ExerciseDefinition `gorm:"foreignKey:ExerciseDefinitionID"`
+	SortNumber         int                `gorm:"not null"`
+	SupersetPartner    *GymExercise       `gorm:"foreignKey:SupersetPartnerID"`
+}
+
 type GymSet struct {
 	gorm.Model
-	ActivityID           uint
-	ExerciseDefinitionID uint
-
-	Activity           Activity           `gorm:"foreignKey:ActivityID"`
-	ExerciseDefinition ExerciseDefinition `gorm:"foreignKey:ExerciseDefinitionID"`
-	SetNumber          int                `gorm:"not null"`
-	Reps               int                `gorm:"not null" json:"reps"`
-	WeightKG           float64            `gorm:"not null" json:"weight"`
-}
-type DraftGymSet struct {
-	gorm.Model
-	ActivityID           uint
-	ExerciseDefinitionID uint
-
-	Activity           Activity           `gorm:"foreignKey:ActivityID"`
-	ExerciseDefinition ExerciseDefinition `gorm:"foreignKey:ExerciseDefinitionID"`
-	SetNumber          int                `gorm:"not null"`
-	Reps               int                `gorm:"not null" json:"reps"`
-	WeightKG           float64            `gorm:"not null" json:"weight"`
-}
-
-// PopulatedExercise is a generic struct that can hold either live or draft sets.
-type PopulatedExercise[T GymSet | DraftGymSet] struct {
-	ExerciseID   uint
-	ExerciseName string
-	Sets         []T
+	GymExerciseId uint
+	GymExercise   GymExercise `gorm:"foreignKey:GymExerciseId"`
+	SetNumber     int         `gorm:"not null"`
+	Reps          int         `gorm:"not null" json:"reps"`
+	WeightKG      float64     `gorm:"not null" json:"weight"`
 }

@@ -1,0 +1,43 @@
+{{/*
+Renders a single set row.
+Expects a map with:
+- Set: The set object {ID, Reps, WeightKg}
+- SetIndex: The 1-based index for display
+- ActivityID: The parent activity ID
+- PopulatedExerciseID: The parent populated exercise ID
+
+what we actually need
+if .Set then populate reps and weight
+ExerciseId
+SetId
+ActivityId
+
+
+
+*/}}
+<div id="set-{{.Set.ID}}" class="flex items-center gap-2" hx-target="this" hx-swap="outerHTML">
+    <span class="font-mono text-zinc-400 w-8 text-center">{{ .SetIndex }}</span>
+
+    <input type="number" placeholder="Reps" value="{{.Set.Reps}}" name="reps" required
+           hx-post="/activities/{{.ActivityID}}/populated-exercises/{{.PopulatedExerciseID}}/sets/{{.Set.ID}}"
+           hx-trigger="keyup changed delay:500ms"
+           hx-include="next [name='weight_kg']"
+           class="p-2 w-full bg-zinc-700 border-zinc-600 rounded-md placeholder:text-zinc-500">
+
+    <span class="text-zinc-400">&times;</span>
+
+    <input type="number" step="0.25" placeholder="Weight" value="{{.Set.WeightKg}}" name="weight_kg" required
+           hx-post="/activities/{{.ActivityID}}/populated-exercises/{{.PopulatedExerciseID}}/sets/{{.Set.ID}}"
+           hx-trigger="keyup changed delay:500ms"
+           hx-include="previous [name='reps']"
+           class="p-2 w-full bg-zinc-700 border-zinc-600 rounded-md placeholder:text-zinc-500">
+
+    <span class="text-zinc-400">kg</span>
+
+    <button type="button"
+            hx-delete="/activities/{{.ActivityID}}/populated-exercises/{{.PopulatedExerciseID}}/sets/{{.Set.ID}}"
+            hx-confirm="Are you sure you want to delete this set?"
+            class="text-red-500 hover:text-red-400" title="Remove Set">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"/></svg>
+    </button>
+</div>

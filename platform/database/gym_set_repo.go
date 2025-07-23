@@ -46,48 +46,6 @@ func (r *GymSetRepo) CountByActivityID(activityID uint64) (int64, error) {
 	return count, nil
 }
 
-func (r *GymSetRepo) GetPopulatedExercises(activityID uint) ([]PopulatedExercise[GymSet], error) {
-	var allSets []GymSet
-	err := r.DB.Model(&GymSet{}).
-		Preload("ExerciseDefinition").
-		Where("activity_id = ?", activityID).
-		Order("exercise_definition_id, set_number ASC").
-		Find(&allSets).Error
-
-	if err != nil || len(allSets) == 0 {
-		return nil, err
-	}
-
-	// Process the flat list into the grouped structure.
-	var result []PopulatedExercise[GymSet]
-	// Start with the first exercise
-	currentExerciseID := allSets[0].ExerciseDefinitionID
-	currentSets := []GymSet{}
-
-	for _, set := range allSets {
-		if set.ExerciseDefinitionID != currentExerciseID {
-			// New exercise found, save the previous one
-			result = append(result, PopulatedExercise[GymSet]{
-				ExerciseID:   currentExerciseID,
-				ExerciseName: currentSets[0].ExerciseDefinition.Name,
-				Sets:         currentSets,
-			})
-			// And start a new group
-			currentSets = []GymSet{}
-			currentExerciseID = set.ExerciseDefinitionID
-		}
-		currentSets = append(currentSets, set)
-	}
-	// Append the very last group
-	result = append(result, PopulatedExercise[GymSet]{
-		ExerciseID:   currentExerciseID,
-		ExerciseName: currentSets[0].ExerciseDefinition.Name,
-		Sets:         currentSets,
-	})
-
-	return result, nil
-}
-
 // ReplaceActivitySets deletes all sets for an activity and creates new ones in a single transaction.
 func (r *GymSetRepo) ReplaceActivitySets(activityID uint, newSets []*GymSet) error {
 	return r.DB.Transaction(func(tx *gorm.DB) error {
