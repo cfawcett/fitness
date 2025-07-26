@@ -1,6 +1,9 @@
 package database
 
-import "gorm.io/gorm"
+import (
+	"gorm.io/gorm"
+	"time"
+)
 
 type ActivityRepo struct {
 	DB *gorm.DB
@@ -30,7 +33,10 @@ func (r *ActivityRepo) GetActivitiesByUserID(userID uint) ([]*Activity, error) {
 // GetActivityById returns the activity based on its database id
 func (r *ActivityRepo) GetActivityByID(id uint) (*Activity, error) {
 	var activity Activity
-	result := r.DB.First(&activity, id)
+	result := r.DB.
+		Preload("GymExercises.Sets").
+		Preload("GymExercises.ExerciseDefinition").
+		First(&activity, id)
 	if result.Error != nil {
 		return nil, result.Error
 	}
@@ -57,5 +63,118 @@ func (r *ActivityRepo) DeleteActivity(activityID uint) error {
 		}
 
 		return nil
+	})
+}
+
+// CreateDraftCopy makes a deep copy of an activity and its children.
+func (r *ActivityRepo) CreateDraftCopy(originalID uint) (uint, error) {
+	var originalActivity Activity
+	// Load the original activity with all its children
+	if err := r.DB.Preload("GymExercises.Sets").First(&originalActivity, originalID).Error; err != nil {
+		return 0, err
+	}
+
+	var draftID uint
+	err := r.DB.Transaction(func(tx *gorm.DB) error {
+		// Create the new draft activity
+		draftActivity := Activity{
+			UserID:             originalActivity.UserID,
+			Type:               originalActivity.Type,
+			ActivityTime:       time.Now(),
+			Name:               originalActivity.Name,
+			Status:             StatusDraft,
+			OriginalActivityID: &originalActivity.ID,
+		}
+		if err := tx.Create(&draftActivity).Error; err != nil {
+			return err
+		}
+		draftID = draftActivity.ID // Store the new ID
+
+		// Copy each exercise and its sets
+		for _, originalExercise := range originalActivity.GymExercises {
+			draftExercise := GymExercise{
+				ActivityID:           draftID, // Link to the new draft activity
+				ExerciseDefinitionID: originalExercise.ExerciseDefinitionID,
+				SortNumber:           originalExercise.SortNumber,
+			}
+			if err := tx.Create(&draftExercise).Error; err != nil {
+				return err
+			}
+
+			for _, originalSet := range originalExercise.Sets {
+				draftSet := GymSet{
+					GymExerciseID: draftExercise.ID, // Link to the new draft exercise
+					SetNumber:     originalSet.SetNumber,
+					Reps:          originalSet.Reps,
+					WeightKG:      originalSet.WeightKG,
+				}
+				if err := tx.Create(&draftSet).Error; err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	})
+	return draftID, err
+}
+
+// FinalizeDraft promotes a draft to 'active' and deletes the original if it exists.
+func (r *ActivityRepo) FinalizeDraft(draftID uint) (uint, error) {
+	var draftActivity Activity
+	if err := r.DB.First(&draftActivity, draftID).Error; err != nil {
+		return 0, err
+	}
+
+	err := r.DB.Transaction(func(tx *gorm.DB) error {
+		// Promote the draft to active
+		if err := tx.Model(&draftActivity).Update("status", StatusActive).Error; err != nil {
+			return err
+		}
+
+		// If it was a copy of an original, delete the original
+		if draftActivity.OriginalActivityID != nil {
+			originalID := *draftActivity.OriginalActivityID
+			// You'll need your DeleteActivity method to accept a tx *gorm.DB
+			// or create a new transactional delete method here.
+			// For simplicity, we'll delete directly:
+			if err := tx.Where("gym_exercise_id IN (SELECT id FROM gym_exercises WHERE activity_id = ?)", originalID).Delete(&GymSet{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Where("activity_id = ?", originalID).Delete(&GymExercise{}).Error; err != nil {
+				return err
+			}
+			if err := tx.Delete(&Activity{}, originalID).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+
+	return draftID, err
+}
+
+// DeleteActivityAndChildren deletes an Activity and all its descendant exercises and sets.
+func (r *ActivityRepo) DeleteActivityAndChildren(activityID uint) error {
+	return r.DB.Transaction(func(tx *gorm.DB) error {
+		// Find all exercise IDs for this activity
+		var exerciseIDs []uint
+		if err := tx.Model(&GymExercise{}).Where("activity_id = ?", activityID).Pluck("id", &exerciseIDs).Error; err != nil {
+			return err
+		}
+
+		// If there are exercises, delete their sets
+		if len(exerciseIDs) > 0 {
+			if err := tx.Where("gym_exercise_id IN ?", exerciseIDs).Delete(&GymSet{}).Error; err != nil {
+				return err
+			}
+		}
+
+		// Delete the exercises
+		if err := tx.Where("activity_id = ?", activityID).Delete(&GymExercise{}).Error; err != nil {
+			return err
+		}
+
+		// Finally, delete the activity itself
+		return tx.Delete(&Activity{}, activityID).Error
 	})
 }

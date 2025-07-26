@@ -1,34 +1,42 @@
 {{ template "header" . }}
-<body class="h-screen flex flex-col">
-<main id="content" class="flex-1 overflow-y-auto pb-24">
-    <div class="p-4">
-        <div class="flex justify-between items-center">
-            <div>
-                <h1 class="text-2xl font-bold">{{ .Activity.Name}}</h1>
-                <p>Started: {{ .Activity.ActivityTime.Format "Jan 2, 2006 3:04 PM" }}</p>
+<body class="bg-zinc-900 text-zinc-200">
+<div class="flex md:ml-64">
+    <main id="content" class="flex-1 overflow-y-auto pb-40">
+        <div class="p-4 md:p-6 max-w-4xl mx-auto">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h1 class="text-3xl font-bold text-white">{{ .Activity.Name }}</h1>
+                    <p class="text-zinc-400">Completed: {{ .Activity.ActivityTime.Format "Jan 2, 2006 3:04 PM" }}</p>
+                </div>
+                <form action="/workouts/{{.Activity.ID}}/create-edit-draft" method="POST">
+                    <button type="submit" class="bg-cyan-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-cyan-600 transition-colors">
+                        Edit Workout
+                    </button>
+                </form>
             </div>
-            <a href="/workouts/{{.Activity.ID}}/edit" class="bg-blue-600 text-white font-bold py-2 px-4 rounded">
-                Edit Workout
-            </a>
-        </div>
-        <hr class="my-4">
+            <hr class="my-4 border-zinc-700">
 
-        <h2 class="text-xl font-semibold">Logged Sets</h2>
+            <h2 class="text-2xl font-semibold mb-4 text-white">Logged Exercises</h2>
 
-        {{ range .PopulatedExercises }}
-        <div class="exercise-group mt-4 p-3 border rounded">
-            <h3 class="font-bold text-lg">{{ .ExerciseName }}</h3>
-            <ul class="list-disc list-inside ml-4">
-                {{ range .Sets }}
-                <li>Set {{ .SetNumber }}: {{ .Reps }} reps @ {{ .WeightKG }}kg</li>
-                {{ end }}
-            </ul>
+            {{ range .Activity.GymExercises }}
+                <div class="exercise-group mt-4 p-4 bg-zinc-800 border border-zinc-700 rounded-lg">
+                    <h3 class="font-bold text-xl text-cyan-400">{{ .ExerciseDefinition.Name }}</h3>
+                    <div class="mt-3 space-y-2">
+                        {{ range .Sets }}
+                            <div class="flex items-center gap-4 text-zinc-300 border-b border-zinc-700/50 pb-2 last:border-b-0 last:pb-0">
+                                <span class="font-mono text-zinc-500 w-12">Set {{ .SetNumber }}:</span>
+                                <span class="w-24">{{ .Reps }} reps</span>
+                                <span class="text-zinc-600">&times;</span>
+                                <span>{{ .WeightKG }} kg</span>
+                            </div>
+                        {{ end }}
+                    </div>
+                </div>
+            {{ else }}
+                <p class="text-zinc-400 mt-4">No exercises logged for this workout.</p>
+            {{ end }}
         </div>
-            
-        {{ else }}
-        <p>No sets logged for this workout yet.</p>
-        {{ end }}
-    </div>
-</main>
+    </main>
+</div>
+{{ block "navbar" . }}{{ end }}
 </body>
-{{ template "navbar" . }}

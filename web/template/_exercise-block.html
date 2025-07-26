@@ -1,46 +1,43 @@
-{{$exerciseIndex := .Index}}
-{{$activityID := .ActivityID}}
+{{- /* Expects .Index, .GymExercise, .AllExercises, .ActivityID */ -}}
+{{ $gymExercise := .GymExercise }}
+{{ $activityID := .ActivityID }}
 
-<div class="exercise-block bg-zinc-800 p-4 border border-zinc-700 rounded-lg mb-4 relative" x-data="{ sets: {{ if .Sets }}{{ .Sets | toJSON }}{{ else }}[{ reps: '', weight: '' }]{{ end }} }">
+<div class="exercise-block bg-zinc-800 p-4 border border-zinc-700 rounded-lg mb-4 relative">
     <button type="button"
-            hx-post="/delete-exercise/{{$activityID}}"
-            hx-include="closest form"
-            hx-target="#workout-form" hx-swap="innerHTML"
-            hx-vals='{"exercise_index": "{{$exerciseIndex}}"}'
+            hx-delete="/gym-exercise/{{$gymExercise.ID}}"
+            hx-confirm="Are you sure you want to delete this exercise and all its sets?"
+            hx-target="closest .exercise-block"
+            hx-swap="outerHTML"
             class="absolute top-2 right-2 text-zinc-500 hover:text-red-500 font-bold text-2xl leading-none"
             title="Delete Exercise">
         &times;
     </button>
 
     <label class="font-semibold text-zinc-300">Exercise:</label>
-    <select name="exercises[{{$exerciseIndex}}][exercise_id]" required
-            class="w-full p-2 bg-zinc-700 border border-zinc-600 rounded-md text-white focus:border-cyan-500 focus:ring-cyan-500"
-            hx-post="/save-draft-workout/{{$activityID}}" hx-include="closest form" hx-swap="none" hx-trigger="change">
-        <option value="" disabled {{ if not .ExerciseID }}selected{{ end }}>Select an exercise</option>
+    <select name="exercise_id"
+            required
+            hx-put="/gym-exercise/{{$gymExercise.ID}}"
+            hx-trigger="change"
+            hx-swap="none"
+            class="w-full p-2 bg-zinc-700 border border-zinc-600 rounded-md text-white focus:border-cyan-500 focus:ring-cyan-500">
+        <option value="" disabled>Select an exercise</option>
         {{ range .AllExercises }}
-            <option value="{{.ID}}" {{ if eq .ID $.ExerciseID }}selected{{ end }}>{{.Name}}</option>
+            <option value="{{.ID}}" {{ if eq .ID $gymExercise.ExerciseDefinitionID }}selected{{ end }}>{{.Name}}</option>
         {{ end }}
     </select>
 
     <h4 class="font-semibold mt-4 mb-2 text-zinc-300">Sets</h4>
-    <div class="space-y-2">
-        <template x-for="(set, index) in sets" :key="index">
-            <div class="flex items-center gap-2">
-                <span class="font-mono text-zinc-400 w-8 text-center" x-text="index + 1"></span>
-                <input type="number" placeholder="Reps" x-model="set.reps" :name="`exercises[{{$exerciseIndex}}][sets][${index}][reps]`" required class="p-2 w-full bg-zinc-700 border-zinc-600 rounded-md placeholder:text-zinc-500">
-                <span class="text-zinc-400">&times;</span>
-                <input type="number" step="0.25" placeholder="Weight" x-model="set.weight" :name="`exercises[{{$exerciseIndex}}][sets][${index}][weight_kg]`" required class="p-2 w-full bg-zinc-700 border-zinc-600 rounded-md placeholder:text-zinc-500">
-                <span class="text-zinc-400">kg</span>
-                <button type="button" @click="sets.splice(index, 1); $nextTick(() => { setTimeout(() => { htmx.trigger($el, 'save-draft'); }, 50); })" class="text-red-500 hover:text-red-400" x-show="sets.length > 1" title="Remove Set">
-                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"/></svg>
-                </button>
-            </div>
-        </template>
+    <div id="sets-container-{{$gymExercise.ID}}" class="flex flex-col space-y-2">
+        {{- /* Loop through sets and render the new partial for each */ -}}
+        {{ range $gymExercise.Sets }}
+            {{ template "_exercise-set.html" (dict "Set" . ) }}
+        {{ end }}
     </div>
 
     <button type="button"
-            @click="sets.push({ reps: '', weight: '' }); $nextTick(() => { setTimeout(() => { htmx.trigger($el, 'save-draft'); }, 50); })"
-            hx-post="/save-draft-workout/{{$activityID}}" hx-include="closest form" hx-swap="none" hx-trigger="save-draft"
+            hx-post="/gym-exercise/{{$gymExercise.ID}}/add-set"
+            hx-target="#sets-container-{{$gymExercise.ID}}"
+            hx-swap="beforeend"
             class="text-cyan-400 hover:text-cyan-300 font-semibold mt-3 text-sm">
         + Add Set
     </button>

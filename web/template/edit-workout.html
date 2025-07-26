@@ -1,50 +1,49 @@
 {{ template "header" . }}
 <body class="bg-zinc-900 text-zinc-200">
 <div class="flex md:ml-64">
-    <main id="content" class="flex-1 overflow-y-auto pb-40"> <div class="p-4 md:p-6 max-w-4xl mx-auto">
+    <main id="content" class="flex-1 overflow-y-auto pb-40">
+        <div class="p-4 md:p-6 max-w-4xl mx-auto">
             <div class="mb-4">
                 <h1 class="text-3xl font-bold text-white">Editing: {{ .Activity.Name }}</h1>
                 <p class="text-zinc-400">Started: {{ .Activity.ActivityTime.Format "Jan 2, 2006 3:04 PM" }}</p>
             </div>
             <hr class="my-4 border-zinc-700">
 
-            <form hx-post="/save-workout/{{.Activity.ID}}" id="workout-form" class="flex flex-col gap-4">
-                <div id="exercise-blocks-container">
-                    {{ range $index, $exercise := .PopulatedExercises }}
-                        {{ template "_exercise-block.html" (dict "Index" $index "ExerciseID" $exercise.ExerciseID "Sets" $exercise.Sets "AllExercises" $.AllExercises "ActivityID" $.Activity.ID) }}
-                    {{ end }}
-                </div>
+            <div id="exercise-blocks-container">
+                {{ range $index, $gymExercise := .Activity.GymExercises }}
+                    {{ template "_exercise-block.html" (dict "Index" $index "GymExercise" $gymExercise "AllExercises" $.AllExercises "ActivityID" $.Activity.ID) }}
+                {{ end }}
+            </div>
 
-                <button type="button"
-                        hx-get="/ui/add-exercise-modal/{{.Activity.ID}}"
-                        hx-target="#modal-container"
-                        hx-swap="innerHTML"
-                        class="mt-4 p-3 bg-cyan-700/20 border-2 border-dashed border-cyan-700/50 rounded-lg text-cyan-300 hover:border-cyan-600 hover:bg-cyan-700/30 transition-colors font-semibold">
-                    + Add Exercise
-                </button>
-            </form>
+            <button type="button"
+                    hx-get="/ui/add-exercise-modal/{{.Activity.ID}}"
+                    hx-target="#modal-container"
+                    hx-swap="innerHTML"
+                    class="mt-4 p-3 bg-cyan-700/20 border-2 border-dashed border-cyan-700/50 rounded-lg text-cyan-300 hover:border-cyan-600 hover:bg-cyan-700/30 transition-colors font-semibold w-full">
+                + Add Exercise
+            </button>
         </div>
-
+    </main>
+</div>
 
 <div class="fixed bottom-[4.5rem] md:bottom-0 left-0 right-0 md:left-64 bg-zinc-800/80 backdrop-blur-sm border-t border-cyan-700 z-30">
     <div class="flex gap-4 p-4 max-w-4xl mx-auto">
         <button type="button"
-                hx-post="/discard-activity/{{.Activity.ID}}"
-                hx-target="#content"
-                hx-swap="innerHTML"
+                hx-post="/activity/{{.Activity.ID}}/discard"
+                hx-confirm="Are you sure you want to discard this draft workout? This cannot be undone."
+                hx-target="body"
                 class="flex-1 bg-zinc-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-zinc-700 transition-colors">
             Discard Workout
         </button>
-        <button type="submit"
-                form="workout-form"
+        <button type="button"
+                hx-post="/activity/{{.Activity.ID}}/finish"
                 class="flex-1 bg-cyan-700 text-white font-bold py-3 px-4 rounded-lg hover:bg-cyan-600 transition-colors">
-            Save Workout
+            Finish Workout
         </button>
     </div>
 </div>
 
 <div id="modal-container"></div>
-    </main>
-</div>
+
 {{ block "navbar" . }}{{ end }}
 </body>

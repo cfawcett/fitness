@@ -43,12 +43,12 @@ func UserHandler(activityRepo *database.ActivityRepo, userRepo *database.UserRep
 			println(activity.Status)
 		}
 
-		//for i := 0; i < len(activityList); i++ {
-		//	if activityList[i].Status == database.StatusDraft {
-		//		activityList = append(activityList[:i], activityList[i+1:]...)
-		//		i--
-		//	}
-		//}
+		for i := 0; i < len(activityList); i++ {
+			if activityList[i].Status == database.StatusDraft {
+				activityList = append(activityList[:i], activityList[i+1:]...)
+				i--
+			}
+		}
 
 		ctx.HTML(http.StatusOK, "user.html", gin.H{
 			"ActiveWorkoutID": activeID,
