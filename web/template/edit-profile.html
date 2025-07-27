@@ -1,0 +1,79 @@
+{{ template "header" . }}
+<body class="bg-zinc-900 text-zinc-200">
+<div class="flex md:ml-64">
+    <main id="content" class="flex-1 overflow-y-auto pb-24">
+        <form action="/profile/edit" method="POST" class="p-4 md:p-6 max-w-4xl mx-auto">
+
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-white">Edit Profile</h1>
+                <div class="flex gap-2">
+                    <a href="/profile" class="bg-zinc-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-zinc-700 transition-colors">
+                        Cancel
+                    </a>
+                    <button type="submit" class="bg-cyan-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-cyan-600 transition-colors">
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+
+            <div class="bg-zinc-800 border border-zinc-700 rounded-lg p-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                    <div>
+                        <label for="first-name" class="block text-sm font-medium text-zinc-400 mb-1">First Name</label>
+                        <input type="text" id="first-name" name="FirstName" value="{{ .User.FirstName }}"
+                               class="w-full bg-zinc-700 rounded-md p-2 focus:outline-none disabled:bg-zinc-800 disabled:cursor-not-allowed"
+                               {{ if .IsSocialUser }}disabled{{ end }}>
+
+                        {{ if .IsSocialUser }}
+                        <p class="text-xs text-zinc-500 mt-1">
+                            To change your name, please update your social profile.
+                        </p>
+                        {{ end }}
+                    </div>
+
+                    <div>
+                        <label for="last-name" class="block text-sm font-medium text-zinc-400 mb-1">Last Name</label>
+                        <input type="text" id="last-name" name="LastName" value="{{ .User.LastName }}"
+                               class="w-full bg-zinc-700 rounded-md p-2 focus:outline-none disabled:bg-zinc-800 disabled:cursor-not-allowed"
+                               {{ if .IsSocialUser }}disabled{{ end }}>
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label for="username" class="block text-sm font-medium text-zinc-400 mb-1">Username</label>
+                        <input type="text" id="username" name="Username" value="{{ .User.Username }}" class="w-full bg-zinc-700 rounded-md border-zinc-600 p-2 focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    </div>
+
+                    <div class="md:col-span-2">
+                        <label for="bio" class="block text-sm font-medium text-zinc-400 mb-1">Bio</label>
+                        <textarea id="bio" name="Bio" rows="4" class="w-full bg-zinc-700 rounded-md border-zinc-600 p-2 focus:ring-2 focus:ring-cyan-500 focus:outline-none">{{ .User.Bio }}</textarea>
+                    </div>
+
+                    <div>
+                        <label for="location" class="block text-sm font-medium text-zinc-400 mb-1">Location</label>
+                        <input type="text" id="location" name="Location" value="{{ .User.Location }}" class="w-full bg-zinc-700 rounded-md border-zinc-600 p-2 focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label for="dob" class="block text-sm font-medium text-zinc-400 mb-1">Date of Birth</label>
+                        <input type="date" id="dob" name="Dob" value="{{ .User.Dob.Format "2006-01-02" }}" class="w-full bg-zinc-700 rounded-md border-zinc-600 p-2 focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label for="height" class="block text-sm font-medium text-zinc-400 mb-1">Height (cm)</label>
+                        <input type="number" id="height" name="HeightCM" value="{{ .User.HeightCM }}" class="w-full bg-zinc-700 rounded-md border-zinc-600 p-2 focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    </div>
+
+                    <div>
+                        <label for="weight" class="block text-sm font-medium text-zinc-400 mb-1">Weight (kg)</label>
+                        <input type="number" step="0.1" id="weight" name="CurrentWeightKG" value="{{ .User.CurrentWeightKG }}" class="w-full bg-zinc-700 rounded-md border-zinc-600 p-2 focus:ring-2 focus:ring-cyan-500 focus:outline-none">
+                    </div>
+
+                </div>
+            </div>
+
+        </form>
+    </main>
+</div>
+</body>
+{{ block "navbar" . }}{{ end }}

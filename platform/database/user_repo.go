@@ -35,3 +35,8 @@ func (r *UserRepo) GetUserById(id uint64) (*User, error) {
 	}
 	return &user, nil
 }
+
+func (r *UserRepo) UpdateUser(user *User) error {
+	result := r.DB.Updates(user)
+	return result.Error
+}
