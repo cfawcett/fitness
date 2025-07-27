@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-contrib/sessions"
@@ -58,6 +59,22 @@ func CreateHandler(activityRepo *database.ActivityRepo, userRepo *database.UserR
 
 		redirectURL := fmt.Sprintf("/workouts/%d/edit", newActivity.ID)
 		ctx.Header("HX-Redirect", redirectURL)
+		ctx.Status(http.StatusOK)
+	}
+}
+
+func DeleteActivityHandler(activityRepo *database.ActivityRepo) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+
+		idStr := ctx.Param("id")
+		id, err := strconv.Atoi(idStr)
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, "Failed to parse id")
+		}
+		err = activityRepo.DeleteActivityAndChildren(uint(id))
+		if err != nil {
+			ctx.String(http.StatusInternalServerError, "Failed to delete activity")
+		}
 		ctx.Status(http.StatusOK)
 	}
 }
@@ -467,6 +484,79 @@ func DiscardWorkoutHandler(activityRepo *database.ActivityRepo) gin.HandlerFunc 
 
 		ctx.Header("HX-Redirect", redirectURL)
 		ctx.Status(http.StatusOK)
+	}
+}
+
+func GetActivityNameHandler(activityRepo *database.ActivityRepo) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		activityIDParam := ctx.Param("id")
+		activityID, err := strconv.ParseUint(activityIDParam, 10, 64)
+		if err != nil {
+			ctx.String(http.StatusBadRequest, "Invalid activity ID")
+			return
+		}
+
+		var editMode bool
+		editQuery := ctx.Query("edit")
+		if editQuery != "" {
+			parsedEditMode, err := strconv.ParseBool(editQuery)
+			if err != nil {
+				ctx.String(http.StatusBadRequest, "Invalid value for 'edit' query parameter")
+				return
+			}
+			editMode = parsedEditMode
+		}
+
+		activity, err := activityRepo.GetActivityByID(uint(activityID))
+		if err != nil {
+			if err == gorm.ErrRecordNotFound {
+				ctx.String(http.StatusNotFound, "Activity not found")
+				return
+			}
+			ctx.String(http.StatusInternalServerError, "Failed to get activity")
+			return
+		}
+
+		ctx.HTML(http.StatusOK, "_activity_name.html", gin.H{
+			"Activity": activity,
+			"EditMode": editMode,
+		})
+	}
+}
+
+func UpdateActivityNameHandler(activityRepo *database.ActivityRepo) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		activityIDParam := ctx.Param("id")
+		activityID, err := strconv.ParseUint(activityIDParam, 10, 64)
+		if err != nil {
+			ctx.String(http.StatusBadRequest, "Invalid activity ID")
+			return
+		}
+
+		// FIX: Added input validation
+		newName := ctx.PostForm("name")
+		if strings.TrimSpace(newName) == "" {
+			ctx.String(http.StatusBadRequest, "Activity name cannot be empty.")
+			return
+		}
+
+		updatedActivity, err := activityRepo.UpdateActivityName(uint(activityID), newName)
+		if err != nil {
+			// Check if the record didn't exist to begin with
+			if err == gorm.ErrRecordNotFound {
+				ctx.String(http.StatusNotFound, "Activity not found")
+				return
+			}
+			// Handle other potential database errors
+			ctx.String(http.StatusInternalServerError, "Failed to update activity name")
+			return
+		}
+
+		// Now we render the display view of the component with the updated data
+		ctx.HTML(http.StatusOK, "_activity_name.html", gin.H{
+			"Activity": updatedActivity, // Use the returned object
+			"EditMode": false,
+		})
 	}
 }
 

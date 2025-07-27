@@ -3,9 +3,33 @@
 <div class="flex md:ml-64">
     <main id="content" class="flex-1 overflow-y-auto pb-40">
         <div class="p-4 md:p-6 max-w-4xl mx-auto">
-            <div class="mb-4">
-                <h1 class="text-3xl font-bold text-white">Editing: {{ .Activity.Name }}</h1>
-                <p class="text-zinc-400">Started: {{ .Activity.ActivityTime.Format "Jan 2, 2006 3:04 PM" }}</p>
+            <div class="flex items-start gap-4">
+                <div class="bg-cyan-900/50 p-3 rounded-lg text-cyan-400 mt-1">
+                    <svg class="size-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M8.09118 8H9.36418C9.72392 8.00873 10.0086 8.30725 10.0002 8.667V15.333C10.0086 15.6927 9.72392 15.9913 9.36418 16H8.09118C7.73144 15.9913 7.4468 15.6927 7.45518 15.333V14H5.63618C5.27644 13.9913 4.9918 13.6927 5.00018 13.333V10.667C4.9918 10.3073 5.27644 10.0087 5.63618 10H7.45518V8.667C7.4468 8.30725 7.73144 8.00873 8.09118 8Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path fill-rule="evenodd" clip-rule="evenodd" d="M15.9092 16H14.6362C14.2764 15.9913 13.9918 15.6927 14.0002 15.333V8.667C13.9918 8.30725 14.2764 8.00873 14.6362 8H15.9092C16.2689 8.00873 16.5536 8.30725 16.5452 8.667V10H18.3632C18.5361 10.0039 18.7004 10.0764 18.8199 10.2015C18.9393 10.3266 19.0042 10.4941 19.0002 10.667V13.333C19.0086 13.6927 18.7239 13.9913 18.3642 14H16.5452V15.333C16.5536 15.6927 16.2689 15.9913 15.9092 16Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </div>
+
+                <div class="flex-grow">
+                    <div class="group relative flex items-center">
+                        <input type="text"
+                               name="name"
+                               value="{{ .Activity.Name }}"
+                               class="w-full rounded-lg bg-transparent p-2 -mx-2 text-3xl font-bold text-white focus:outline-none focus:bg-zinc-800/50 group-hover:bg-zinc-800/50 transition-colors placeholder:text-zinc-500"
+                               placeholder="Workout Name...">
+
+                        <div class="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5 text-zinc-400">
+                                <path d="m2.695 14.762-1.262 3.155a.5.5 0 0 0 .65.65l3.155-1.262a4 4 0 0 0 1.343-.886L17.5 5.501a2.121 2.121 0 0 0-3-3L3.58 13.42a4 4 0 0 0-.885 1.343Z" />
+                            </svg>
+                        </div>
+                    </div>
+
+                    <div class="mt-2 flex items-center gap-2 text-zinc-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5">
+                            <path fill-rule="evenodd" d="M5.75 2a.75.75 0 0 1 .75.75V4h7V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 18 6.75v8.5A2.75 2.75 0 0 1 15.25 18H4.75A2.75 2.75 0 0 1 2 15.25v-8.5A2.75 2.75 0 0 1 4.75 4H5V2.75A.75.75 0 0 1 5.75 2Zm-1 5.5h10.5a.75.75 0 0 0 0-1.5H4.75a.75.75 0 0 0 0 1.5Z" clip-rule="evenodd" />
+                        </svg>
+                        <p>{{ .Activity.ActivityTime.Format "Monday, Jan 2, 2006 at 3:04 PM" }}</p>
+                    </div>
+                </div>
             </div>
             <hr class="my-4 border-zinc-700">
 

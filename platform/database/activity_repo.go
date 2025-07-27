@@ -2,6 +2,7 @@ package database
 
 import (
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 	"time"
 )
 
@@ -30,7 +31,7 @@ func (r *ActivityRepo) GetActivitiesByUserID(userID uint) ([]*Activity, error) {
 	return activities, nil
 }
 
-// GetActivityById returns the activity based on its database id
+// GetActivityByID returns the activity based on its database id
 func (r *ActivityRepo) GetActivityByID(id uint) (*Activity, error) {
 	var activity Activity
 	result := r.DB.
@@ -47,6 +48,31 @@ func (r *ActivityRepo) GetActivityByID(id uint) (*Activity, error) {
 func (r *ActivityRepo) UpdateActivityStatus(activityID uint, status ExerciseStatus) error {
 	err := r.DB.Model(&Activity{}).Where("id = ?", activityID).Update("status", status).Error
 	return err
+}
+
+// UpdateActivityName updates the name of a specific activity and returns the updated record.
+func (r *ActivityRepo) UpdateActivityName(activityID uint, name string) (*Activity, error) {
+	var activity Activity
+
+	// Use Clauses(clause.Returning{}) to update and return the data in one query.
+
+	// This is more efficient than a separate UPDATE and SELECT.
+	err := r.DB.Model(&activity).
+		Clauses(clause.Returning{}).
+		Where("id = ?", activityID).
+		Update("name", name).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	// If the update affected 0 rows (e.g., wrong ID), the returned activity.ID will be 0.
+	// We check for this and return a standard "not found" error.
+	if activity.ID == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	return &activity, nil
 }
 
 // DeleteActivity deletes an activity and its associated gym sets

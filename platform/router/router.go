@@ -7,6 +7,7 @@ import (
 	"fitness/platform/database"
 	"fitness/platform/middleware"
 	"fitness/web/app/login"
+	"fitness/web/app/logout"
 	"fitness/web/app/user"
 	"fitness/web/app/workout"
 	"html/template"
@@ -105,6 +106,7 @@ func (h *Handler) registerRoutes(auth *authenticator.Authenticator) {
 
 	h.Router.GET("/", home.Handler)
 	h.Router.GET("/login", login.Handler(auth))
+	h.Router.GET("/logout", logout.Handler)
 
 	h.Router.GET("/callback", callback.Handler(auth, h.UserRepo))
 
@@ -132,27 +134,31 @@ func (h *Handler) registerRoutes(auth *authenticator.Authenticator) {
 
 	// --- Component-Based HTMX Routes ---
 
-	// CREATE routes
+	// --- Create Routes ---
 	h.Router.POST("/activity/:id/add-exercise", middleware.IsAuthenticated, workout.AddExerciseToActivityHandler(h.GymExerciseRepo, h.GymSetRepo, h.ExerciseRepo))
 	h.Router.POST("/gym-exercise/:id/add-set", middleware.IsAuthenticated, workout.AddSetToExerciseHandler(h.GymSetRepo))
 
-	// UPDATE routes
+	// --- Update Routes ---
 	h.Router.PUT("/gym-set/:id", middleware.IsAuthenticated, workout.UpdateSetHandler(h.GymSetRepo))
 	h.Router.PUT("/gym-exercise/:id", middleware.IsAuthenticated, workout.UpdateExerciseHandler(h.GymExerciseRepo))
 
-	// DELETE routes (you will need to create these handlers)
+	// --- Inline Editing Routes (New) ---
+	h.Router.GET("/ui/activity-name/:id", middleware.IsAuthenticated, workout.GetActivityNameHandler(h.ActivityRepo))
+	h.Router.POST("/activity/:id/name", middleware.IsAuthenticated, workout.UpdateActivityNameHandler(h.ActivityRepo))
+
+	// --- Delete Routes ---
 	h.Router.DELETE("/gym-set/:id", middleware.IsAuthenticated, workout.DeleteSetHandler(h.GymSetRepo))
 	h.Router.DELETE("/gym-exercise/:id", middleware.IsAuthenticated, workout.DeleteExerciseHandler(h.GymExerciseRepo))
+	h.Router.DELETE("/activity/:id", middleware.IsAuthenticated, workout.DeleteActivityHandler(h.ActivityRepo))
 
-	// Main workout action routes
+	// --- Main Workout Action Routes ---
 	h.Router.POST("/activity/:id/finish", middleware.IsAuthenticated, workout.FinishWorkoutHandler(h.ActivityRepo))
 	h.Router.POST("/activity/:id/discard", middleware.IsAuthenticated, workout.DiscardWorkoutHandler(h.ActivityRepo))
 	h.Router.POST("/workouts/:id/create-edit-draft", middleware.IsAuthenticated, workout.CreateEditDraftHandler(h.ActivityRepo))
-	// --- UI Fragment Routes (for the modal) ---
+
+	// --- UI Fragment Routes ---
 	h.Router.GET("/ui/add-exercise-modal/:id", middleware.IsAuthenticated, workout.AddExerciseModalHandler())
 	h.Router.GET("/ui/exercise-list/:id", middleware.IsAuthenticated, workout.ExerciseListHandler(h.ExerciseRepo))
 	h.Router.GET("/exercise-info/:exerciseID", middleware.IsAuthenticated, workout.ExerciseInfoHandler(h.ExerciseRepo, h.GymSetRepo, h.UserRepo))
-
-	// The final action handler from the modal
 	h.Router.POST("/add-exercise-to-form/:id", middleware.IsAuthenticated, workout.AddExerciseToFormHandler(h.GymExerciseRepo, h.GymSetRepo, h.ExerciseRepo))
 }

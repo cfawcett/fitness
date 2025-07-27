@@ -5,11 +5,18 @@ import (
 	"net/url"
 	"os"
 
+	"github.com/gin-contrib/sessions" // <-- Make sure this import is added
 	"github.com/gin-gonic/gin"
 )
 
 // Handler for our logout.
 func Handler(ctx *gin.Context) {
+	// --- NEW: Clear the local application's session first ---
+	session := sessions.Default(ctx)
+	session.Options(sessions.Options{MaxAge: -1}) // This effectively deletes the session cookie
+	session.Save()
+	// ----------------------------------------------------
+
 	logoutUrl, err := url.Parse("https://" + os.Getenv("AUTH0_DOMAIN") + "/v2/logout")
 	if err != nil {
 		ctx.String(http.StatusInternalServerError, err.Error())

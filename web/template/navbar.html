@@ -1,5 +1,5 @@
 {{ define "navbar" }}
-    <div class="fixed bg-zinc-800 text-white z-40 flex
+    <div class="fixed bg-zinc-800 text-white z-50 flex
             bottom-0 left-0 w-full border-t border-cyan-700 justify-around items-center py-1
             md:top-0 md:h-screen md:w-64 md:flex-col md:border-t-0 md:border-r md:p-4 md:justify-start">
 
@@ -12,15 +12,7 @@
                 </div>
                 <svg class="w-5 h-5 ml-auto text-zinc-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
             </button>
-
-            <div x-show="open"
-                 x-transition:enter="transition ease-out duration-100"
-                 x-transition:enter-start="opacity-0 scale-95"
-                 x-transition:enter-end="opacity-100 scale-100"
-                 x-transition:leave="transition ease-in duration-75"
-                 x-transition:leave-start="opacity-100 scale-100"
-                 x-transition:leave-end="opacity-0 scale-95"
-                 class="absolute left-0 w-full mt-2 origin-top-right bg-zinc-700 rounded-md shadow-lg z-10 border border-zinc-600">
+            <div x-show="open" x-transition class="absolute left-0 w-full mt-2 origin-top-right bg-zinc-700 rounded-md shadow-lg z-10 border border-zinc-600">
                 <div class="py-1">
                     <a href="#" class="block px-4 py-2 text-sm text-zinc-200 hover:bg-zinc-600">My Profile</a>
                     <a href="/logout" class="block w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-zinc-600">Logout</a>
@@ -29,45 +21,26 @@
         </div>
 
         <div class="contents md:flex md:flex-col md:w-full md:gap-2">
-            <a href="/user" hx-get="/user" hx-target="body" hx-replace-url="true"
-               class="w-1/5 flex flex-col items-center gap-1 p-1 bg-cyan-700 text-white rounded-lg transition-colors
-                  md:w-full md:flex-row md:justify-start md:gap-3 md:p-3 md:bg-cyan-800 hover:md:bg-cyan-700">
+            <a href="/user" hx-get="/user" hx-target="body" hx-replace-url="true" class="w-1/5 flex flex-col items-center gap-1 p-1 bg-cyan-700 text-white rounded-lg transition-colors md:w-full md:flex-row md:justify-start md:gap-3 md:p-3 md:bg-cyan-800 hover:md:bg-cyan-700">
                 <div class="h-6 flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" /></svg></div>
                 <span class="text-xs font-bold md:text-base md:font-semibold">Home</span>
             </a>
-
-            <a href="#" class="w-1/5 flex flex-col items-center gap-1 p-1 rounded-lg transition-colors hover:bg-white/20
-                         md:w-full md:flex-row md:justify-start md:gap-3 md:p-3 md:hover:bg-zinc-700">
-                <div class="h-6 flex items-center">
-                    <svg class="size-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M8.09118 8H9.36418C9.72392 8.00873 10.0086 8.30725 10.0002 8.667V15.333C10.0086 15.6927 9.72392 15.9913 9.36418 16H8.09118C7.73144 15.9913 7.4468 15.6927 7.45518 15.333V14H5.63618C5.27644 13.9913 4.9918 13.6927 5.00018 13.333V10.667C4.9918 10.3073 5.27644 10.0087 5.63618 10H7.45518V8.667C7.4468 8.30725 7.73144 8.00873 8.09118 8Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                        <path fill-rule="evenodd" clip-rule="evenodd" d="M15.9092 16H14.6362C14.2764 15.9913 13.9918 15.6927 14.0002 15.333V8.667C13.9918 8.30725 14.2764 8.00873 14.6362 8H15.9092C16.2689 8.00873 16.5536 8.30725 16.5452 8.667V10H18.3632C18.5361 10.0039 18.7004 10.0764 18.8199 10.2015C18.9393 10.3266 19.0042 10.4941 19.0002 10.667V13.333C19.0086 13.6927 18.7239 13.9913 18.3642 14H16.5452V15.333C16.5536 15.6927 16.2689 15.9913 15.9092 16Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-                    </svg>
-                </div>
+            <a href="#" class="w-1/5 flex flex-col items-center gap-1 p-1 rounded-lg transition-colors hover:bg-white/20 md:w-full md:flex-row md:justify-start md:gap-3 md:p-3 md:hover:bg-zinc-700">
+                <div class="h-6 flex items-center"><svg class="size-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M8.09118 8H9.36418C9.72392 8.00873 10.0086 8.30725 10.0002 8.667V15.333C10.0086 15.6927 9.72392 15.9913 9.36418 16H8.09118C7.73144 15.9913 7.4468 15.6927 7.45518 15.333V14H5.63618C5.27644 13.9913 4.9918 13.6927 5.00018 13.333V10.667C4.9918 10.3073 5.27644 10.0087 5.63618 10H7.45518V8.667C7.4468 8.30725 7.73144 8.00873 8.09118 8Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path fill-rule="evenodd" clip-rule="evenodd" d="M15.9092 16H14.6362C14.2764 15.9913 13.9918 15.6927 14.0002 15.333V8.667C13.9918 8.30725 14.2764 8.00873 14.6362 8H15.9092C16.2689 8.00873 16.5536 8.30725 16.5452 8.667V10H18.3632C18.5361 10.0039 18.7004 10.0764 18.8199 10.2015C18.9393 10.3266 19.0042 10.4941 19.0002 10.667V13.333C19.0086 13.6927 18.7239 13.9913 18.3642 14H16.5452V15.333C16.5536 15.6927 16.2689 15.9913 15.9092 16Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
                 <span class="text-xs font-medium md:text-base md:font-semibold">Workouts</span>
             </a>
-
             <div class="w-1/5 flex justify-center md:hidden">
                 <button id="add-button" class="flex flex-col items-center z-10">
                     <div class="p-3 bg-cyan-700 rounded-full shadow-lg transform -translate-y-4 hover:scale-110 transition-transform"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="size-7 text-white"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg></div>
                     <span class="text-xs font-medium -translate-y-2">Add</span>
                 </button>
             </div>
-
-            <a href="#" class="w-1/5 flex flex-col items-center gap-1 p-1 rounded-lg transition-colors hover:bg-white/20
-                         md:w-full md:flex-row md:justify-start md:gap-3 md:p-3 md:hover:bg-zinc-700">
+            <a href="#" class="w-1/5 flex flex-col items-center gap-1 p-1 rounded-lg transition-colors hover:bg-white/20 md:w-full md:flex-row md:justify-start md:gap-3 md:p-3 md:hover:bg-zinc-700">
                 <div class="h-6 flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="size-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" /></svg></div>
                 <span class="text-xs font-medium md:text-base md:font-semibold">Parkrun</span>
             </a>
-
-            <a href="#" class="w-1/5 flex flex-col items-center gap-1 p-1 rounded-lg transition-colors hover:bg-white/20
-                         md:w-full md:flex-row md:justify-start md:gap-3 md:p-3 md:hover:bg-zinc-700">
-                <div class="h-6 flex items-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
-                    </svg>
-                </div>
+            <a href="#" class="w-1/5 flex flex-col items-center gap-1 p-1 rounded-lg transition-colors hover:bg-white/20 md:w-full md:flex-row md:justify-start md:gap-3 md:p-3 md:hover:bg-zinc-700">
+                <div class="h-6 flex items-center"><svg xmlns="http://www.w3.org/2000/svg" class="size-6" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.325.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.241-.438.613-.43.992a7.723 7.723 0 0 1 0 .255c-.008.378.137.75.43.991l1.004.827c.424.35.534.955.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.47 6.47 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.281c-.09.543-.56.94-1.11.94h-2.594c-.55 0-1.019-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.991a6.932 6.932 0 0 1 0-.255c.007-.38-.138-.751-.43-.992l-1.004-.827a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.086.22-.128.332-.183.582-.495.644-.869l.214-1.28Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" /></svg></div>
                 <span class="text-xs font-medium md:text-base md:font-semibold">Settings</span>
             </a>
         </div>
@@ -75,7 +48,10 @@
         <div class="hidden md:block w-full pt-4 mt-auto">
             <h3 class="px-3 mb-2 text-sm font-semibold text-zinc-400 uppercase tracking-wider">Add New</h3>
             <div class="space-y-2">
-                <button class="w-full p-3 hover:bg-zinc-700 rounded-lg font-semibold text-white flex items-center gap-3 text-left" hx-post="/workouts/new" hx-swap="none">
+                <button hx-post="/workouts/new"
+                        hx-target="body"
+                        hx-swap="beforeend"
+                        class="w-full p-3 hover:bg-zinc-700 rounded-lg font-semibold text-white flex items-center gap-3 text-left">
                     <svg class="w-5 h-5 text-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
                     <span>Add Workout</span>
                 </button>
@@ -86,10 +62,13 @@
             </div>
         </div>
 
-        <div id="action-sheet" class="hidden md:hidden absolute bottom-full mb-4 w-11/12 max-w-sm left-1/2 -translate-x-1/2 bg-zinc-800 rounded-2xl p-4 shadow-xl z-50">
+        <div id="action-sheet" class="hidden md:hidden absolute bottom-full mb-4 w-11/12 max-w-sm left-1/2 -translate-x-1/2 bg-zinc-800 rounded-2xl p-4 shadow-xl z-60">
             <h3 class="text-lg font-bold text-white text-center mb-4">Add New Entry</h3>
             <div class="space-y-3">
-                <button class="w-full text-left p-3 bg-cyan-700 hover:bg-cyan-800 rounded-lg font-semibold text-white" hx-post="/workouts/new" hx-swap="none">Add Workout</button>
+                <button class="w-full text-left p-3 bg-cyan-700 hover:bg-cyan-800 rounded-lg font-semibold text-white"
+                        hx-post="/workouts/new"
+                        hx-target="body"
+                        hx-swap="beforeend">Add Workout</button>
                 <button class="w-full text-left p-3 bg-cyan-700 hover:bg-cyan-800 rounded-lg font-semibold text-white">Add Run</button>
                 <button class="w-full text-left p-3 bg-cyan-700 hover:bg-cyan-800 rounded-lg font-semibold text-white">Add Measurement</button>
                 <button onclick="closeSheet()" class="w-full text-center mt-4 p-3 bg-zinc-600 hover:bg-zinc-700 rounded-lg font-bold text-white">Cancel</button>
@@ -97,6 +76,7 @@
         </div>
 
         <script>
+            // All script tags are unchanged and correct.
             const sheet = document.getElementById('action-sheet');
             const addButton = document.getElementById('add-button');
             let isSheetOpen = false;
@@ -126,18 +106,14 @@
                     closeSheet();
                 }
             });
-        </script>
-        <script>
+
             function closeModal() {
                 const modal = document.getElementById('modal');
                 if (modal) {
-                    // Add the .closing class to trigger the exit transition
                     modal.classList.add('closing');
-
-                    // Listen for the transition to end, then remove the modal
                     modal.addEventListener('transitionend', () => {
                         modal.remove();
-                    }, { once: true }); // Use transitionend instead of animationend
+                    }, { once: true });
                 }
             }
         </script>
