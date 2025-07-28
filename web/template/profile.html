@@ -1,0 +1,74 @@
+{{ template "header" . }}
+<body class="bg-zinc-900 text-zinc-200">
+<div class="flex md:ml-64">
+    <main id="content" class="flex-1 overflow-y-auto pb-24">
+        <div class="p-4 md:p-6 max-w-4xl mx-auto">
+
+            <div class="flex justify-between items-center mb-6">
+                <h1 class="text-3xl font-bold text-white">My Profile</h1>
+                <a href="/profile/edit" class="bg-cyan-700 text-white font-bold py-2 px-4 rounded-lg hover:bg-cyan-600 transition-colors">
+                    Edit Profile
+                </a>
+            </div>
+
+            <div class="bg-zinc-800 border border-zinc-700 rounded-lg p-6 flex flex-col md:flex-row items-start gap-6">
+                <img class="w-24 h-24 md:w-32 md:h-32 rounded-full border-4 border-cyan-700 object-cover" src="{{ .User.ProfilePictureUrl }}" alt="Profile Picture"/>
+                <div class="flex-grow">
+                    <h2 class="text-3xl font-bold text-white">{{ .User.FirstName }} {{ .User.LastName }}</h2>
+                    <p class="text-lg text-zinc-400 mt-1">@{{ .User.Username }}</p>
+                    <p class="text-cyan-400 mt-2">{{ .User.Email }}</p>
+
+                    {{ if .User.Bio }}
+                    <p class="text-zinc-300 mt-4 border-l-4 border-cyan-800 pl-4">
+                        {{ .User.Bio }}
+                    </p>
+                    {{ end }}
+                </div>
+            </div>
+
+            <div class="bg-zinc-800 border border-zinc-700 rounded-lg p-6 mt-6">
+                <h3 class="text-xl font-semibold text-white mb-4 border-b border-zinc-700 pb-2">Details</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+
+                    {{ if .User.Location }}
+                    <div>
+                        <label class="text-sm text-zinc-400">Location</label>
+                        <p class="font-semibold text-white">{{ .User.Location }}</p>
+                    </div>
+                    {{ end }}
+
+                    {{ if not .User.Dob.IsZero }}
+                    <div>
+                        <label class="text-sm text-zinc-400">Date of Birth</label>
+                        <p class="font-semibold text-white">{{ .User.Dob.Format "January 2, 2006" }}</p>
+                    </div>
+                    {{ end }}
+
+                    {{ if gt .User.HeightCM 0 }} <div>
+                    <label class="text-sm text-zinc-400">Height</label>
+                    <p class="font-semibold text-white">{{ .User.HeightCM }} cm</p>
+                </div>
+                    {{ end }}
+
+                    {{ if .User.CurrentWeightKG }}
+                    <div>
+                        <label class="text-sm text-zinc-400">Weight</label>
+                        <p class="font-semibold text-white">{{ .User.CurrentWeightKG }} kg</p>
+                    </div>
+                    {{ end }}
+
+                    {{ if .User.PrimarySport }}
+                    <div>
+                        <label class="text-sm text-zinc-400">Primary Sport</label>
+                        <p class="font-semibold text-white">{{ .User.PrimarySport }}</p>
+                    </div>
+                    {{ end }}
+                </div>
+            </div>
+
+        </div>
+    </main>
+</div>
+
+</body>
+{{ block "navbar" . }}{{ end }}

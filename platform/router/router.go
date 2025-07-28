@@ -110,6 +110,10 @@ func (h *Handler) registerRoutes(auth *authenticator.Authenticator) {
 
 	h.Router.GET("/callback", callback.Handler(auth, h.UserRepo))
 
+	h.Router.GET("/profile", middleware.IsAuthenticated, user.ProfileHandler(h.UserRepo))
+	h.Router.GET("/profile/edit", middleware.IsAuthenticated, user.EditProfileGetHandler(h.UserRepo))
+	h.Router.POST("/profile/edit", middleware.IsAuthenticated, user.EditProfilePostHandler(h.UserRepo))
+
 	//h.Router.POST("/add-exercise-to-form/:id", middleware.IsAuthenticated, workout.AddExerciseToFormHandler(h.ActivityRepo, h.GymSetRepo, h.ExerciseRepo))
 	//h.Router.POST("/delete-exercise/:id", middleware.IsAuthenticated, workout.DeleteExerciseHandler(h.ActivityRepo, h.GymSetRepo, h.ExerciseRepo))
 	//h.Router.POST("/save-draft-workout/:id", middleware.IsAuthenticated, workout.SaveDraftWorkoutHandler(h.GymSetRepo, h.ActivityRepo, h.ExerciseRepo))
