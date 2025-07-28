@@ -19,6 +19,7 @@ func main() {
 	}
 
 	rtr, err := router.New(auth)
+	rtr.Router.Static("/static", "./public")
 
 	log.Print("Server listening on http://localhost:3000/")
 	if err := http.ListenAndServe("0.0.0.0:3000", rtr.Router); err != nil {

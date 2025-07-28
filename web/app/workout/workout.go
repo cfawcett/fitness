@@ -277,24 +277,49 @@ func AddSetToExerciseHandler(gymSetRepo *database.GymSetRepo) gin.HandlerFunc {
 // AddExerciseModalHandler serves the modal container.
 // The modal itself then loads its content via hx-get.
 // Route: GET /ui/add-exercise-modal/:id
-func AddExerciseModalHandler() gin.HandlerFunc {
+func AddExerciseModalHandler(exerciseRepo *database.ExerciseRepo) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		activityID := c.Param("id")
+		muscleGroups, err := exerciseRepo.GetUniqueMuscleGroups()
+		if err != nil {
+			c.String(http.StatusInternalServerError, err.Error())
+		}
+		if err != nil {
+			c.String(http.StatusInternalServerError, "Failed to load muscle groups")
+			return
+		}
 		c.HTML(http.StatusOK, "_add-exercise-modal.html", gin.H{
-			"ActivityID": activityID,
+			"ActivityID":   activityID,
+			"MuscleGroups": muscleGroups,
 		})
 	}
 }
 
-// ExerciseListHandler serves the list of all exercises inside the modal.
-// Route: GET /ui/exercise-list/:id
-func ExerciseListHandler(exerciseRepo *database.ExerciseRepo) gin.HandlerFunc {
+func ExerciseListHandler(exerciseRepo *database.ExerciseRepo, userRepo *database.UserRepo) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		allExercises, _ := exerciseRepo.GetExerciseList()
+		// Get the current user from the session to find their favorites
+		session := sessions.Default(c)
+		sessionUserID := session.Get("user").(uint)
+
+		// Get the filter and search params from the URL query
+		searchQuery := c.Query("search")
+		muscleQuery := c.Query("muscle")
 		activityID := c.Param("id")
-		c.HTML(http.StatusOK, "_exercise-list.html", gin.H{
-			"AllExercises": allExercises,
-			"ActivityID":   activityID,
+		println(searchQuery + muscleQuery)
+
+		// Call our new, powerful repository method
+		exercises, err := exerciseRepo.SearchExercises(sessionUserID, searchQuery, muscleQuery)
+		if err != nil {
+			// It's good practice to show an error in the UI
+			c.String(http.StatusInternalServerError, "Could not fetch exercises")
+			return
+		}
+
+		// IMPORTANT: This handler now renders a PARTIAL template, not a full page.
+		// This partial only contains the list of exercises.
+		c.HTML(http.StatusOK, "_exercise_list_items.html", gin.H{
+			"Exercises":  exercises,
+			"ActivityID": activityID,
 		})
 	}
 }
@@ -305,21 +330,58 @@ func ExerciseInfoHandler(
 	exerciseRepo *database.ExerciseRepo,
 	gymSetRepo *database.GymSetRepo,
 	userRepo *database.UserRepo,
+	activityRepo *database.ActivityRepo,
 ) gin.HandlerFunc {
+	// This is the structure your template needs
+	type GroupedHistoryEntry struct {
+		Activity database.Activity
+		Sets     []*database.GymSet
+	}
+
 	return func(ctx *gin.Context) {
 		sessionUserId := sessions.Default(ctx).Get("user").(uint)
-		sessionUser, _ := userRepo.GetUserById(uint64(sessionUserId))
 		exerciseID, _ := strconv.ParseUint(ctx.Param("exerciseID"), 10, 64)
 		activityID := ctx.Query("activityID")
 
 		exercise, _ := exerciseRepo.GetExerciseByID(uint(exerciseID))
-		history, _ := gymSetRepo.GetExerciseHistoryForUser(sessionUser.ID, uint(exerciseID))
 
-		// Grouping logic for history can go here...
+		// This still returns the flat list of all sets, which is what we want
+		historySets, _ := gymSetRepo.GetExerciseHistoryForUser(sessionUserId, uint(exerciseID))
+
+		// --- NEW: Grouping Logic ---
+		// We'll use a map to group sets by their parent Activity ID
+		historyMap := make(map[uint]GroupedHistoryEntry)
+		// We'll use a slice to maintain the original order of the workouts
+		var activityOrder []uint
+
+		for _, set := range historySets {
+			activityID := set.GymExercise.ActivityID
+
+			// If we haven't seen this workout before, create a new group for it
+			if _, ok := historyMap[activityID]; !ok {
+				activityOrder = append(activityOrder, activityID)
+				historyMap[activityID] = GroupedHistoryEntry{
+					Activity: set.GymExercise.Activity,
+					Sets:     []*database.GymSet{},
+				}
+			}
+
+			// Add the current set to its corresponding workout group
+			entry := historyMap[activityID]
+			entry.Sets = append(entry.Sets, set)
+			historyMap[activityID] = entry
+		}
+
+		// Convert the map to a slice, preserving the date order
+		var groupedHistory []GroupedHistoryEntry
+		for _, id := range activityOrder {
+			groupedHistory = append(groupedHistory, historyMap[id])
+		}
+		// --- End of Grouping Logic ---
 
 		ctx.HTML(http.StatusOK, "_exercise-info.html", gin.H{
 			"Exercise":       exercise,
-			"GroupedHistory": history, // Pass your grouped history here
+			"GroupedHistory": groupedHistory, // Pass the newly grouped data
 			"ActivityID":     activityID,
 		})
 	}

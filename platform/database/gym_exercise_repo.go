@@ -18,6 +18,48 @@ func (r *GymExerciseRepo) CreateGymExercise(gymExercise *GymExercise) error {
 	return result.Error
 }
 
+// GetExerciseById returns an exercise based on its ID
+func (r *GymExerciseRepo) GetExerciseByID(gymExerciseID uint64) (*GymExercise, error) {
+	var result GymExercise
+	err := r.DB.First(&result, gymExerciseID).Error
+	return &result, err
+}
+
+// UpdateSupersetInfo updates an existing GymExercise with its new superset details.
+func (r *GymExerciseRepo) UpdateSupersetInfo(gymExerciseID uint, supersetID *string, order int) error {
+	return r.DB.Model(&GymExercise{}).
+		Where("id = ?", gymExerciseID).
+		Updates(map[string]interface{}{"superset_id": supersetID, "superset_order": order}).Error
+}
+
+// GetNextSupersetOrder finds the highest order number in a superset and returns the next one.
+func (r *GymExerciseRepo) GetNextSupersetOrder(activityID uint, supersetID string) (int, error) {
+	var maxOrder int
+	// COALESCE is a safe way to handle the case where no exercises exist yet, defaulting to -1.
+	err := r.DB.Model(&GymExercise{}).
+		Where("activity_id = ? AND superset_id = ?", activityID, supersetID).
+		Select("COALESCE(MAX(superset_order), -1)").
+		Row().
+		Scan(&maxOrder)
+
+	if err != nil {
+		return 0, err
+	}
+	return maxOrder + 1, nil
+}
+
+// GetSupersetGroup fetches all exercises belonging to a specific superset within a workout.
+func (r *GymExerciseRepo) GetSupersetGroup(activityID uint, supersetID string) ([]*GymExercise, error) {
+	var group []*GymExercise
+	err := r.DB.
+		Where("activity_id = ? AND superset_id = ?", activityID, supersetID).
+		Order("superset_order ASC").
+		Preload("ExerciseDefinition"). // Eager load the name of the exercise
+		Preload("Sets").               // Eager load the sets for each exercise
+		Find(&group).Error
+	return group, err
+}
+
 // GetExercisesByActivityId returns a list of gym exercises in a given activity
 func (r *GymExerciseRepo) GetExercisesByActivityId(activityID uint) ([]*GymExercise, error) {
 	var gymExercise []*GymExercise

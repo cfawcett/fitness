@@ -34,11 +34,20 @@
         {{ end }}
     </div>
 
-    <button type="button"
-            hx-post="/gym-exercise/{{$gymExercise.ID}}/add-set"
-            hx-target="#sets-container-{{$gymExercise.ID}}"
-            hx-swap="beforeend"
-            class="text-cyan-400 hover:text-cyan-300 font-semibold mt-3 text-sm">
-        + Add Set
-    </button>
+    <div class="flex items-center justify-evenly">
+
+        <button type="button"
+                hx-post="/gym-exercise/{{$gymExercise.ID}}/add-set"
+                hx-target="#sets-container-{{$gymExercise.ID}}"
+                hx-swap="beforeend"
+                class="text-cyan-400 hover:text-cyan-300 font-semibold mt-3 text-sm border-2 p-2 border-cyan-500 rounded-md hover:border-cyan-300 hover:text-cyan-300">
+            + Add Set
+        </button>
+        <button type="button"
+                hx-get="/ui/add-exercise-modal/{{.ActivityID}}?sourceExerciseID={{.ID}}"
+                hx-target="#modal-container"
+                class="text-cyan-400 hover:text-cyan-300 font-semibold mt-3 text-sm border-2 p-2 border-cyan-500 rounded-md hover:border-cyan-300 hover:text-cyan-300">
+            + Add Superset
+        </button>
+    </div>
 </div>

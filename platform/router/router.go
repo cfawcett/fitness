@@ -42,9 +42,9 @@ func New(auth *authenticator.Authenticator) (*Handler, error) {
 	}
 
 	userRepo := database.NewUserRepo(db)
-	exerciseRepo := database.NewExerciseRepo(db)
+	//exerciseRepo := database.NewExerciseRepo(db)
 
-	database.SeedExercises(exerciseRepo)
+	//database.SeedExercises(exerciseRepo)
 
 	engine := gin.Default()
 	handler := &Handler{
@@ -157,8 +157,8 @@ func (h *Handler) registerRoutes(auth *authenticator.Authenticator) {
 	h.Router.POST("/workouts/:id/create-edit-draft", middleware.IsAuthenticated, workout.CreateEditDraftHandler(h.ActivityRepo))
 
 	// --- UI Fragment Routes ---
-	h.Router.GET("/ui/add-exercise-modal/:id", middleware.IsAuthenticated, workout.AddExerciseModalHandler())
-	h.Router.GET("/ui/exercise-list/:id", middleware.IsAuthenticated, workout.ExerciseListHandler(h.ExerciseRepo))
-	h.Router.GET("/exercise-info/:exerciseID", middleware.IsAuthenticated, workout.ExerciseInfoHandler(h.ExerciseRepo, h.GymSetRepo, h.UserRepo))
+	h.Router.GET("/ui/add-exercise-modal/:id", middleware.IsAuthenticated, workout.AddExerciseModalHandler(h.ExerciseRepo))
+	h.Router.GET("/ui/exercise-list/:id", middleware.IsAuthenticated, workout.ExerciseListHandler(h.ExerciseRepo, h.UserRepo))
+	h.Router.GET("/exercise-info/:exerciseID", middleware.IsAuthenticated, workout.ExerciseInfoHandler(h.ExerciseRepo, h.GymSetRepo, h.UserRepo, h.ActivityRepo))
 	h.Router.POST("/add-exercise-to-form/:id", middleware.IsAuthenticated, workout.AddExerciseToFormHandler(h.GymExerciseRepo, h.GymSetRepo, h.ExerciseRepo))
 }

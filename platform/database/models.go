@@ -28,6 +28,7 @@ END$$;
 		&ExerciseDefinition{},
 		&GymSet{},
 		&GymExercise{},
+		&FavouriteExercises{},
 	)
 	return err
 }
@@ -35,21 +36,22 @@ END$$;
 type User struct {
 	gorm.Model
 
-	Auth0Sub          string `gorm:"uniqueIndex"`
-	Username          string `gorm:"uniqueIndex;size:50"`
-	Email             string `gorm:"uniqueIndex;size:255"`
-	FirstName         string `gorm:"size:100"`
-	LastName          string `gorm:"size:100"`
-	Bio               string
-	Location          string `gorm:"size:255"`
-	ProfilePictureUrl string
-	Dob               time.Time
-	Gender            string `gorm:"size:50"`
-	PrimarySport      string `gorm:"size:100"`
-	HeightCM          int
-	CurrentWeightKG   float64
-	UnitSystem        string `gorm:"size:10"`
-	IsPT              bool   `gorm:"default:false"`
+	Auth0Sub           string `gorm:"uniqueIndex"`
+	Username           string `gorm:"uniqueIndex;size:50"`
+	Email              string `gorm:"uniqueIndex;size:255"`
+	FirstName          string `gorm:"size:100"`
+	LastName           string `gorm:"size:100"`
+	Bio                string
+	Location           string `gorm:"size:255"`
+	ProfilePictureUrl  string
+	Dob                time.Time
+	Gender             string `gorm:"size:50"`
+	PrimarySport       string `gorm:"size:100"`
+	HeightCM           int
+	CurrentWeightKG    float64
+	UnitSystem         string               `gorm:"size:10"`
+	IsPT               bool                 `gorm:"default:false"`
+	FavouriteExercises []ExerciseDefinition `gorm:"many2many:favourite_exercises;"`
 }
 
 type Activity struct {
@@ -68,11 +70,15 @@ type Activity struct {
 
 type ExerciseDefinition struct {
 	gorm.Model
-	Name              string
-	Description       string
-	VideoUrl          string
-	ImageUrl          string
-	TargetMuscleGroup string `gorm:"size:100"`
+	Name               string
+	Description        string
+	VideoUrl           string
+	ImageUrlStart      string
+	ImageUrlEnd        string
+	PrimaryMuscleGroup string         `gorm:"size:100"`
+	BodyPart           string         `gorm:"size:100"`
+	Equipment          string         `gorm:"size:100"`
+	SecondaryMuscles   pq.StringArray `gorm:"type:text[]"`
 }
 
 type GymExercise struct {
@@ -84,8 +90,19 @@ type GymExercise struct {
 	Activity           Activity           `gorm:"foreignKey:ActivityID"`
 	ExerciseDefinition ExerciseDefinition `gorm:"foreignKey:ExerciseDefinitionID"`
 	SortNumber         int                `gorm:"not null"`
-	SupersetPartner    *GymExercise       `gorm:"foreignKey:SupersetPartnerID"`
-	Sets               []GymSet           `gorm:"foreignKey:GymExerciseID"`
+	SupersetID         *string
+	SupersetOrder      int
+
+	Sets []GymSet `gorm:"foreignKey:GymExerciseID"`
+}
+
+type FavouriteExercises struct {
+	gorm.Model
+	UserID               uint
+	ExerciseDefinitionID uint
+
+	User               User               `gorm:"foreignKey:UserID"`
+	ExerciseDefinition ExerciseDefinition `gorm:"foreignKey:ExerciseDefinitionID"`
 }
 
 type GymSet struct {

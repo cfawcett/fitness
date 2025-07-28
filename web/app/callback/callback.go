@@ -42,7 +42,7 @@ func Handler(auth *authenticator.Authenticator, userRepo *database.UserRepo) gin
 			return
 		}
 
-		user, err := userRepo.GetUserByAuthID(profile.Sub)
+		user, err := userRepo.GetUserByAuthID(profile.Sub) //TODO we need to update this everytime incase social login is changed
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				// Creating new user
