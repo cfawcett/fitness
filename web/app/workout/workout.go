@@ -489,16 +489,17 @@ func CreateEditDraftHandler(activityRepo *database.ActivityRepo) gin.HandlerFunc
 	}
 }
 
-// FinishWorkoutHandler promotes a draft to active, replacing the original if it exists.
+// FinishWorkoutHandler promotes a draft, updating notes and session in the process.
 // Route: POST /activity/:id/finish
 func FinishWorkoutHandler(activityRepo *database.ActivityRepo) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		draftID, _ := strconv.ParseUint(ctx.Param("id"), 10, 64)
+		notes := ctx.PostForm("notes")
 
-		// This new repo method contains the logic to promote the draft
-		finalID, err := activityRepo.FinalizeDraft(uint(draftID))
+		// This one call now handles all database logic
+		finalID, err := activityRepo.FinalizeDraft(uint(draftID), notes)
 		if err != nil {
-			ctx.String(http.StatusInternalServerError, "Failed to finalize workout")
+			ctx.String(http.StatusInternalServerError, "Failed to finalize workout: "+err.Error())
 			return
 		}
 
@@ -509,7 +510,7 @@ func FinishWorkoutHandler(activityRepo *database.ActivityRepo) gin.HandlerFunc {
 			return
 		}
 
-		// Redirect to the newly active workout's view page
+		// Redirect to the final, active workout's view page
 		ctx.Header("HX-Redirect", fmt.Sprintf("/workouts/%d", finalID))
 		ctx.Status(http.StatusOK)
 	}

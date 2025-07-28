@@ -29,6 +29,15 @@
                         </svg>
                         <p>{{ .Activity.ActivityTime.Format "Monday, Jan 2, 2006 at 3:04 PM" }}</p>
                     </div>
+                    <div class="mt-6">
+                        <label for="workout-notes" class="text-lg font-semibold text-white">Workout Notes</label>
+                        <input type="text"
+                               id="workout-notes"
+                               name="notes"
+                               value="{{ .Activity.Notes }}"
+                               class="mt-2 w-full p-2 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-200 focus:border-cyan-500 focus:ring-cyan-500"
+                               placeholder="Add a note...">
+                    </div>
                 </div>
             </div>
             <hr class="my-4 border-zinc-700">
@@ -61,6 +70,7 @@
         </button>
         <button type="button"
                 hx-post="/activity/{{.Activity.ID}}/finish"
+                hx-include="[name='notes']"
                 class="flex-1 bg-cyan-700 text-white font-bold py-3 px-4 rounded-lg hover:bg-cyan-600 transition-colors">
             Finish Workout
         </button>

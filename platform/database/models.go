@@ -64,6 +64,7 @@ type Activity struct {
 	Details            pq.StringArray `gorm:"type:jsonb"`
 	Status             ExerciseStatus `gorm:"type:exercise_status;default:'draft';not null"`
 	OriginalActivityID *uint          `gorm:"index"`
+	Notes              string         `gorm:"type:text"`
 
 	GymExercises []GymExercise `gorm:"foreignKey:ActivityID"`
 }
@@ -114,4 +115,5 @@ type GymSet struct {
 	Reps          int          `gorm:"not null" json:"reps"`
 	WeightKG      float64      `gorm:"not null" json:"weight"`
 	SetType       string       `gorm:"size:50" json:"set_type"`
+	Notes         string       `gorm:"type:text" json:"notes"`
 }

@@ -75,6 +75,26 @@ func (r *ActivityRepo) UpdateActivityName(activityID uint, name string) (*Activi
 	return &activity, nil
 }
 
+// UpdateActivityNotes updates the notes of a specific activity and returns the updated record.
+func (r *ActivityRepo) UpdateActivityNotes(activityID uint, notes string) (*Activity, error) {
+	var activity Activity
+
+	err := r.DB.Model(&activity).
+		Clauses(clause.Returning{}).
+		Where("id = ?", activityID).
+		Update("notes", notes).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	if activity.ID == 0 {
+		return nil, gorm.ErrRecordNotFound
+	}
+
+	return &activity, nil
+}
+
 // DeleteActivity deletes an activity and its associated gym sets
 func (r *ActivityRepo) DeleteActivity(activityID uint) error {
 	return r.DB.Transaction(func(tx *gorm.DB) error {
@@ -110,6 +130,7 @@ func (r *ActivityRepo) CreateDraftCopy(originalID uint) (uint, error) {
 			Name:               originalActivity.Name,
 			Status:             StatusDraft,
 			OriginalActivityID: &originalActivity.ID,
+			Notes:              originalActivity.Notes,
 		}
 		if err := tx.Create(&draftActivity).Error; err != nil {
 			return err
@@ -144,39 +165,54 @@ func (r *ActivityRepo) CreateDraftCopy(originalID uint) (uint, error) {
 	return draftID, err
 }
 
-// FinalizeDraft promotes a draft to 'active' and deletes the original if it exists.
-func (r *ActivityRepo) FinalizeDraft(draftID uint) (uint, error) {
+// FinalizeDraft promotes a draft to 'active'.
+// If it's an edit of an existing workout, it updates the original and deletes the draft.
+// It returns the ID of the final, active workout.
+func (r *ActivityRepo) FinalizeDraft(draftID uint, notes string) (uint, error) {
 	var draftActivity Activity
-	if err := r.DB.First(&draftActivity, draftID).Error; err != nil {
+	// Preload the exercises from the draft so we can move them
+	if err := r.DB.Preload("GymExercises").First(&draftActivity, draftID).Error; err != nil {
 		return 0, err
 	}
 
-	err := r.DB.Transaction(func(tx *gorm.DB) error {
-		// Promote the draft to active
-		if err := tx.Model(&draftActivity).Update("status", StatusActive).Error; err != nil {
-			return err
-		}
-
-		// If it was a copy of an original, delete the original
-		if draftActivity.OriginalActivityID != nil {
-			originalID := *draftActivity.OriginalActivityID
-			// You'll need your DeleteActivity method to accept a tx *gorm.DB
-			// or create a new transactional delete method here.
-			// For simplicity, we'll delete directly:
-			if err := tx.Where("gym_exercise_id IN (SELECT id FROM gym_exercises WHERE activity_id = ?)", originalID).Delete(&GymSet{}).Error; err != nil {
-				return err
-			}
+	// This is an edit of a previously existing workout
+	if draftActivity.OriginalActivityID != nil {
+		originalID := *draftActivity.OriginalActivityID
+		err := r.DB.Transaction(func(tx *gorm.DB) error {
+			// 1. Delete all old exercises and sets from the ORIGINAL workout
 			if err := tx.Where("activity_id = ?", originalID).Delete(&GymExercise{}).Error; err != nil {
 				return err
 			}
-			if err := tx.Delete(&Activity{}, originalID).Error; err != nil {
+
+			// 2. "Move" the draft's exercises over to the original workout
+			if err := tx.Model(&GymExercise{}).Where("activity_id = ?", draftID).Update("activity_id", originalID).Error; err != nil {
 				return err
 			}
-		}
-		return nil
-	})
 
-	return draftID, err
+			// 3. Update the original workout's name and notes from the draft
+			if err := tx.Model(&Activity{}).Where("id = ?", originalID).Updates(map[string]interface{}{
+				"name":  draftActivity.Name,
+				"notes": notes,
+			}).Error; err != nil {
+				return err
+			}
+
+			// 4. Delete the now-empty draft activity
+			if err := tx.Delete(&Activity{}, draftID).Error; err != nil {
+				return err
+			}
+			return nil
+		})
+		return originalID, err
+	}
+
+	// This is a new workout being finished for the first time
+	err := r.DB.Model(&draftActivity).Updates(map[string]interface{}{
+		"status": StatusActive,
+		"notes":  notes,
+	}).Error
+
+	return draftActivity.ID, err
 }
 
 // DeleteActivityAndChildren deletes an Activity and all its descendant exercises and sets.
