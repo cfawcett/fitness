@@ -99,9 +99,39 @@ func ViewHandler(activityRepo *database.ActivityRepo, gymSetRepo *database.GymSe
 			return
 		}
 
+		// --- NEW LOGIC STARTS HERE ---
+
+		// 1. Define the new struct that the template needs, including our flag.
+		type viewExercise struct {
+			database.GymExercise
+			IsSupersetParent bool
+		}
+
+		// 2. Create a map to easily find which exercises are parents of a superset.
+		supersetChildren := make(map[uint]bool)
+		for _, ex := range activity.GymExercises {
+			if ex.SupersetWithID != nil {
+				// Mark the parent ID as having a superset child.
+				supersetChildren[*ex.SupersetWithID] = true
+			}
+		}
+
+		// 3. Build the new slice for the template with the IsSupersetParent flag set correctly.
+		var viewExercises []viewExercise
+		for _, ex := range activity.GymExercises {
+			viewExercises = append(viewExercises, viewExercise{
+				GymExercise:      ex,
+				IsSupersetParent: supersetChildren[ex.ID],
+			})
+		}
+
+		// --- NEW LOGIC ENDS HERE ---
+
+		// 4. Pass the NEW `viewExercises` slice to the template.
 		ctx.HTML(http.StatusOK, "view-workout.html", gin.H{
-			"Activity": activity,
-			"User":     sessionUser,
+			"Activity":      activity,
+			"User":          sessionUser,
+			"ViewExercises": viewExercises, // This is the data the template needs
 		})
 	}
 }
