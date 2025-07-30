@@ -86,13 +86,11 @@ type GymExercise struct {
 	gorm.Model
 	ActivityID           uint
 	ExerciseDefinitionID uint
-	SupersetPartnerID    *uint
 
 	Activity           Activity           `gorm:"foreignKey:ActivityID"`
 	ExerciseDefinition ExerciseDefinition `gorm:"foreignKey:ExerciseDefinitionID"`
 	SortNumber         int                `gorm:"not null"`
-	SupersetID         *string
-	SupersetOrder      int
+	SupersetWithID     *uint
 
 	Sets []GymSet `gorm:"foreignKey:GymExerciseID"`
 }

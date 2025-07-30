@@ -141,6 +141,8 @@ func (h *Handler) registerRoutes(auth *authenticator.Authenticator) {
 	// --- Create Routes ---
 	h.Router.POST("/activity/:id/add-exercise", middleware.IsAuthenticated, workout.AddExerciseToActivityHandler(h.GymExerciseRepo, h.GymSetRepo, h.ExerciseRepo))
 	h.Router.POST("/gym-exercise/:id/add-set", middleware.IsAuthenticated, workout.AddSetToExerciseHandler(h.GymSetRepo))
+	h.Router.POST("/gym-exercise/:id/add-superset", middleware.IsAuthenticated, workout.AddSupersetHandler(h.GymExerciseRepo, h.GymSetRepo, h.ExerciseRepo)) // ADD THIS LINE
+	h.Router.POST("/gym-exercise/add-superset-from-modal", middleware.IsAuthenticated, workout.AddSupersetFromModalHandler(h.GymExerciseRepo, h.GymSetRepo, h.ExerciseRepo))
 
 	// --- Update Routes ---
 	h.Router.PUT("/gym-set/:id", middleware.IsAuthenticated, workout.UpdateSetHandler(h.GymSetRepo))
@@ -161,8 +163,9 @@ func (h *Handler) registerRoutes(auth *authenticator.Authenticator) {
 	h.Router.POST("/workouts/:id/create-edit-draft", middleware.IsAuthenticated, workout.CreateEditDraftHandler(h.ActivityRepo))
 
 	// --- UI Fragment Routes ---
-	h.Router.GET("/ui/add-exercise-modal/:id", middleware.IsAuthenticated, workout.AddExerciseModalHandler(h.ExerciseRepo))
+	h.Router.GET("/ui/add-exercise-modal/:id", middleware.IsAuthenticated, workout.AddExerciseModalHandler(h.ExerciseRepo, h.UserRepo))
 	h.Router.GET("/ui/exercise-list/:id", middleware.IsAuthenticated, workout.ExerciseListHandler(h.ExerciseRepo, h.UserRepo))
+	h.Router.GET("/ui/exercise-list-view/:id", middleware.IsAuthenticated, workout.ExerciseListViewHandler(h.ExerciseRepo, h.UserRepo))
 	h.Router.GET("/exercise-info/:exerciseID", middleware.IsAuthenticated, workout.ExerciseInfoHandler(h.ExerciseRepo, h.GymSetRepo, h.UserRepo, h.ActivityRepo))
 	h.Router.POST("/add-exercise-to-form/:id", middleware.IsAuthenticated, workout.AddExerciseToFormHandler(h.GymExerciseRepo, h.GymSetRepo, h.ExerciseRepo))
 }

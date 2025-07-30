@@ -25,6 +25,13 @@ func (r *GymExerciseRepo) GetExerciseByID(gymExerciseID uint64) (*GymExercise, e
 	return &result, err
 }
 
+// In your database/gym_exercise_repo.go
+func (r *GymExerciseRepo) IncrementSortFrom(activityID uint, sortNumber int) error {
+	return r.DB.Model(&GymExercise{}).
+		Where("activity_id = ? AND sort_number > ?", activityID, sortNumber).
+		Update("sort_number", gorm.Expr("sort_number + 1")).Error
+}
+
 // UpdateSupersetInfo updates an existing GymExercise with its new superset details.
 func (r *GymExerciseRepo) UpdateSupersetInfo(gymExerciseID uint, supersetID *string, order int) error {
 	return r.DB.Model(&GymExercise{}).

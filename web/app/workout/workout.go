@@ -277,49 +277,176 @@ func AddSetToExerciseHandler(gymSetRepo *database.GymSetRepo) gin.HandlerFunc {
 // AddExerciseModalHandler serves the modal container.
 // The modal itself then loads its content via hx-get.
 // Route: GET /ui/add-exercise-modal/:id
-func AddExerciseModalHandler(exerciseRepo *database.ExerciseRepo) gin.HandlerFunc {
+func AddExerciseModalHandler(exerciseRepo *database.ExerciseRepo, userRepo *database.UserRepo) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		session := sessions.Default(c)
+		sessionUserID := session.Get("user").(uint)
 		activityID := c.Param("id")
-		muscleGroups, err := exerciseRepo.GetUniqueMuscleGroups()
-		if err != nil {
-			c.String(http.StatusInternalServerError, err.Error())
-		}
-		if err != nil {
-			c.String(http.StatusInternalServerError, "Failed to load muscle groups")
-			return
-		}
+		sourceExerciseID := c.Query("sourceExerciseID") // Get the context
+
+		// Fetch all data needed for the modal in one go
+		muscleGroups, _ := exerciseRepo.GetUniqueMuscleGroups()
+		exercises, _ := exerciseRepo.SearchExercises(sessionUserID, "", "") // Get initial list
+
+		// Render the complete modal template with all the data
 		c.HTML(http.StatusOK, "_add-exercise-modal.html", gin.H{
-			"ActivityID":   activityID,
-			"MuscleGroups": muscleGroups,
+			"ActivityID":       activityID,
+			"MuscleGroups":     muscleGroups,
+			"Exercises":        exercises,        // Pass the list directly
+			"SourceExerciseID": sourceExerciseID, // Pass the context
 		})
 	}
 }
 
+// In ExerciseListHandler
 func ExerciseListHandler(exerciseRepo *database.ExerciseRepo, userRepo *database.UserRepo) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		// Get the current user from the session to find their favorites
 		session := sessions.Default(c)
 		sessionUserID := session.Get("user").(uint)
 
-		// Get the filter and search params from the URL query
 		searchQuery := c.Query("search")
 		muscleQuery := c.Query("muscle")
 		activityID := c.Param("id")
-		println(searchQuery + muscleQuery)
+		sourceExerciseID := c.Query("sourceExerciseID") // Read from form query
 
-		// Call our new, powerful repository method
-		exercises, err := exerciseRepo.SearchExercises(sessionUserID, searchQuery, muscleQuery)
+		exercises, _ := exerciseRepo.SearchExercises(sessionUserID, searchQuery, muscleQuery)
+
+		c.HTML(http.StatusOK, "_exercise_list_items.html", gin.H{
+			"Exercises":        exercises,
+			"ActivityID":       activityID,
+			"SourceExerciseID": sourceExerciseID, // Pass context to partial
+		})
+	}
+}
+
+// ExerciseListViewHandler serves the entire list view content for the modal.
+// Used by the "Back" button in the exercise info screen.
+func ExerciseListViewHandler(exerciseRepo *database.ExerciseRepo, userRepo *database.UserRepo) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		session := sessions.Default(c)
+		sessionUserID := session.Get("user").(uint)
+		sourceExerciseID := c.Query("sourceExerciseID")
+		activityID := c.Param("id")
+
+		// Get data needed for the template
+		muscleGroups, _ := exerciseRepo.GetUniqueMuscleGroups()
+		// We can reuse the same powerful search function with no filters
+		exercises, _ := exerciseRepo.SearchExercises(sessionUserID, "", "")
+
+		// Render the full modal content view
+		c.HTML(http.StatusOK, "_add-exercise-modal-content.html", gin.H{
+			"ActivityID":       activityID,
+			"MuscleGroups":     muscleGroups,
+			"Exercises":        exercises,
+			"SourceExerciseID": sourceExerciseID,
+		})
+	}
+}
+
+// AddSupersetFromModalHandler creates a superset exercise after selection from the modal.
+func AddSupersetFromModalHandler(
+	gymExerciseRepo *database.GymExerciseRepo,
+	gymSetRepo *database.GymSetRepo,
+	exerciseRepo *database.ExerciseRepo,
+) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		// 1. Get IDs from the form post
+		sourceExerciseID, _ := strconv.ParseUint(ctx.PostForm("source_exercise_id"), 10, 64)
+		newExerciseDefID, _ := strconv.ParseUint(ctx.PostForm("exercise_id"), 10, 64)
+
+		sourceExercise, err := gymExerciseRepo.GetExerciseByID(sourceExerciseID)
 		if err != nil {
-			// It's good practice to show an error in the UI
-			c.String(http.StatusInternalServerError, "Could not fetch exercises")
+			ctx.String(http.StatusNotFound, "Source exercise not found")
 			return
 		}
 
-		// IMPORTANT: This handler now renders a PARTIAL template, not a full page.
-		// This partial only contains the list of exercises.
-		c.HTML(http.StatusOK, "_exercise_list_items.html", gin.H{
-			"Exercises":  exercises,
-			"ActivityID": activityID,
+		// 2. Make a "gap" in the sort order
+		gymExerciseRepo.IncrementSortFrom(sourceExercise.ActivityID, sourceExercise.SortNumber)
+
+		// 3. Create the new GymExercise with the selected definition
+		newGymExercise := &database.GymExercise{
+			ActivityID:           sourceExercise.ActivityID,
+			SortNumber:           sourceExercise.SortNumber + 1,
+			SupersetWithID:       &sourceExercise.ID,
+			ExerciseDefinitionID: uint(newExerciseDefID), // We have the ID now!
+		}
+		gymExerciseRepo.CreateGymExercise(newGymExercise)
+
+		// 4. Create the first set
+		firstSet := &database.GymSet{GymExerciseID: newGymExercise.ID, SetNumber: 1}
+		gymSetRepo.CreateGymSet(firstSet)
+		newGymExercise.Sets = []database.GymSet{*firstSet}
+
+		// We need to fetch the full definition to pass to the template
+		definition, _ := exerciseRepo.GetExerciseByID(uint(newExerciseDefID))
+		newGymExercise.ExerciseDefinition = *definition
+
+		// 5. Return the new exercise block partial
+		allExercises, _ := exerciseRepo.GetExerciseList()
+		ctx.HTML(http.StatusOK, "_exercise-block.html", gin.H{
+			"GymExercise":  newGymExercise,
+			"AllExercises": allExercises,
+			"ActivityID":   sourceExercise.ActivityID,
+		})
+	}
+}
+
+// AddSupersetHandler creates a new exercise linked to a source exercise.
+func AddSupersetHandler(
+	gymExerciseRepo *database.GymExerciseRepo,
+	gymSetRepo *database.GymSetRepo,
+	exerciseRepo *database.ExerciseRepo,
+) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		// 1. Get the source exercise that we're adding a superset to.
+		sourceExerciseID, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
+		if err != nil {
+			ctx.String(http.StatusBadRequest, "Invalid source exercise ID")
+			return
+		}
+
+		sourceExercise, err := gymExerciseRepo.GetExerciseByID(sourceExerciseID)
+		if err != nil {
+			ctx.String(http.StatusNotFound, "Source exercise not found")
+			return
+		}
+
+		// 2. Make a "gap" in the sort order. Increment the sort number of all
+		// exercises that come after the source exercise.
+		if err := gymExerciseRepo.IncrementSortFrom(sourceExercise.ActivityID, sourceExercise.SortNumber); err != nil {
+			ctx.String(http.StatusInternalServerError, "Failed to update sort order")
+			return
+		}
+
+		// 3. Create the new GymExercise.
+		newGymExercise := &database.GymExercise{
+			ActivityID:     sourceExercise.ActivityID,
+			SortNumber:     sourceExercise.SortNumber + 1, // Place it right after the source.
+			SupersetWithID: &sourceExercise.ID,            // Link it to the source.
+		}
+		if err := gymExerciseRepo.CreateGymExercise(newGymExercise); err != nil {
+			ctx.String(http.StatusInternalServerError, "Failed to create new exercise")
+			return
+		}
+
+		// 4. Create an initial set for the new exercise.
+		firstSet := &database.GymSet{
+			GymExerciseID: newGymExercise.ID,
+			SetNumber:     1,
+		}
+		if err := gymSetRepo.CreateGymSet(firstSet); err != nil {
+			ctx.String(http.StatusInternalServerError, "Failed to create initial set")
+			return
+		}
+		newGymExercise.Sets = []database.GymSet{*firstSet}
+
+		// 5. Return the new exercise block partial to the frontend.
+		allExercises, _ := exerciseRepo.GetExerciseList()
+		ctx.HTML(http.StatusOK, "_exercise-block.html", gin.H{
+			"Index":        newGymExercise.SortNumber, // Or just a placeholder index
+			"GymExercise":  newGymExercise,
+			"AllExercises": allExercises,
+			"ActivityID":   sourceExercise.ActivityID,
 		})
 	}
 }

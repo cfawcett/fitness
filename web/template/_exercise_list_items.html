@@ -1,22 +1,37 @@
+{{ $sourceID := .SourceExerciseID }}
+{{ $activityID := .ActivityID }}
+
 {{ range .Exercises }}
     <div class="flex items-center justify-between p-2 rounded-lg hover:bg-zinc-700/80 transition-colors group mx-2">
-        <div hx-get="/exercise-info/{{.ID}}?activityID={{$.ActivityID}}"
-             hx-target="#exercise-list-container"
+        <div hx-get="/exercise-info/{{.ID}}?activityID={{$activityID}}"
+             hx-target="#modal-content"
              hx-swap="innerHTML"
              class="flex-grow cursor-pointer">
             <p class="font-semibold text-zinc-200 group-hover:text-white">{{ .Name }}</p>
             <p class="text-xs text-zinc-400">{{ .PrimaryMuscleGroup }}</p>
         </div>
 
-        <button hx-post="/add-exercise-to-form/{{$.ActivityID}}"
-                hx-vals='{"exercise_id": {{.ID}}}'
-                hx-target="#exercise-blocks-container"
-                hx-swap="beforeend"
-                @click="show = false"
-                class="p-2 leading-none text-cyan-500 hover:text-cyan-300"
-                title="Quick Add to Workout">
-            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-        </button>
+        {{ if $sourceID }}
+            <button hx-post="/gym-exercise/add-superset-from-modal"
+                    hx-vals='{"exercise_id": {{.ID}}, "source_exercise_id": "{{$sourceID}}" }'
+                    hx-target="#exercise-block-{{$sourceID}}"
+                    hx-swap="afterend"
+                    @click="show = false"
+                    class="p-2 leading-none text-cyan-500 hover:text-cyan-300"
+                    title="Add as Superset">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+            </button>
+        {{ else }}
+            <button hx-post="/add-exercise-to-form/{{$activityID}}"
+                    hx-vals='{"exercise_id": {{.ID}}}'
+                    hx-target="#exercise-blocks-container"
+                    hx-swap="beforeend"
+                    @click="show = false"
+                    class="p-2 leading-none text-cyan-500 hover:text-cyan-300"
+                    title="Quick Add to Workout">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+            </button>
+        {{ end }}
     </div>
 {{ else }}
     <p class="p-4 text-center text-zinc-500">No exercises found.</p>

@@ -1,0 +1,34 @@
+<div class="p-4 border-b border-zinc-700">
+    <div class="flex justify-between items-center mb-4">
+        <h3 class="text-xl font-semibold text-white">Select an Exercise</h3>
+        <button @click="show = false" class="text-zinc-500 hover:text-white text-2xl">&times;</button>
+    </div>
+
+    <form hx-get="/ui/exercise-list/{{.ActivityID}}"
+          hx-trigger="keyup changed delay:300ms from:#search-input, change from:#muscle-filter"
+          hx-target="#exercise-list-container"
+          class="flex gap-4">
+
+        <div x-data="{ searchTerm: '' }" class="relative flex-grow">
+            <input id="search-input" type="search" name="search" x-model="searchTerm"
+                   class="w-full bg-zinc-700 text-white rounded-lg p-2 pr-8 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                   placeholder="Search exercises...">
+            <button type="button" x-show="searchTerm.length > 0" @click="searchTerm = ''"
+                    hx-get="/ui/exercise-list/{{.ActivityID}}" hx-target="#exercise-list-container" hx-swap="innerHTML"
+                    class="absolute inset-y-0 right-0 flex items-center pr-2 text-zinc-500 hover:text-white">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
+            </button>
+        </div>
+
+        <div @click.stop>
+            <select id="muscle-filter" name="muscle" class="bg-zinc-700 text-white rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-cyan-500">
+                <option value="">All Muscle Groups</option>
+                {{ range .MuscleGroups }}<option value="{{ . }}">{{ . }}</option>{{ end }}
+            </select>
+        </div>
+    </form>
+</div>
+
+<div id="exercise-list-container" class="overflow-y-auto max-h-[60vh]">
+    {{ template "_exercise_list_items.html" . }}
+</div>
