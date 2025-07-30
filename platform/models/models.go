@@ -20,3 +20,7 @@ type ActivityHistory struct {
 	Activity database.Activity
 	Sets     []*database.GymSet
 }
+
+type RenderableExerciseBlock struct {
+	Exercises []database.GymExercise
+}

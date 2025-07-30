@@ -1,80 +1,57 @@
 package database
 
-//
-import "gorm.io/gorm"
+import (
+	"gorm.io/gorm"
+)
 
 type GymExerciseRepo struct {
 	DB *gorm.DB
 }
 
-// NewGymExerciseRepo creates a new GymSetRepo
+// NewGymExerciseRepo creates a new GymExerciseRepo
 func NewGymExerciseRepo(db *gorm.DB) *GymExerciseRepo {
 	return &GymExerciseRepo{DB: db}
 }
 
-// CreateGymExercise adds a new gym set to the database
+// CreateGymExercise adds a new gym exercise to the database
 func (r *GymExerciseRepo) CreateGymExercise(gymExercise *GymExercise) error {
 	result := r.DB.Create(gymExercise)
 	return result.Error
 }
 
-// GetExerciseById returns an exercise based on its ID
-func (r *GymExerciseRepo) GetExerciseByID(gymExerciseID uint64) (*GymExercise, error) {
+// GetGymExerciseByID returns an exercise based on its ID
+func (r *GymExerciseRepo) GetGymExerciseByID(gymExerciseID uint) (*GymExercise, error) {
 	var result GymExercise
-	err := r.DB.First(&result, gymExerciseID).Error
+	// Use Preload to also fetch the associated sets
+	err := r.DB.Preload("Sets").First(&result, gymExerciseID).Error
 	return &result, err
 }
 
-// UpdateSupersetInfo updates an existing GymExercise with its new superset details.
-func (r *GymExerciseRepo) UpdateSupersetInfo(gymExerciseID uint, supersetID *string, order int) error {
-	return r.DB.Model(&GymExercise{}).
-		Where("id = ?", gymExerciseID).
-		Updates(map[string]interface{}{"superset_id": supersetID, "superset_order": order}).Error
+// GetExercisesBySupersetID returns all exercises belonging to a specific superset, ordered correctly.
+func (r *GymExerciseRepo) GetExercisesBySupersetID(supersetID string) ([]GymExercise, error) {
+	var results []GymExercise
+	err := r.DB.Preload("Sets").
+		Where("superset_id = ?", supersetID).
+		Order("superset_order asc").
+		Find(&results).Error
+	return results, err
 }
 
-// GetNextSupersetOrder finds the highest order number in a superset and returns the next one.
-func (r *GymExerciseRepo) GetNextSupersetOrder(activityID uint, supersetID string) (int, error) {
-	var maxOrder int
-	// COALESCE is a safe way to handle the case where no exercises exist yet, defaulting to -1.
-	err := r.DB.Model(&GymExercise{}).
-		Where("activity_id = ? AND superset_id = ?", activityID, supersetID).
-		Select("COALESCE(MAX(superset_order), -1)").
-		Row().
-		Scan(&maxOrder)
-
-	if err != nil {
-		return 0, err
-	}
-	return maxOrder + 1, nil
-}
-
-// GetSupersetGroup fetches all exercises belonging to a specific superset within a workout.
-func (r *GymExerciseRepo) GetSupersetGroup(activityID uint, supersetID string) ([]*GymExercise, error) {
-	var group []*GymExercise
-	err := r.DB.
-		Where("activity_id = ? AND superset_id = ?", activityID, supersetID).
-		Order("superset_order ASC").
-		Preload("ExerciseDefinition"). // Eager load the name of the exercise
-		Preload("Sets").               // Eager load the sets for each exercise
-		Find(&group).Error
-	return group, err
+// UpdateGymExercise updates an existing GymExercise's details.
+func (r *GymExerciseRepo) UpdateGymExercise(gymExercise *GymExercise) error {
+	return r.DB.Save(gymExercise).Error
 }
 
 // GetExercisesByActivityId returns a list of gym exercises in a given activity
 func (r *GymExerciseRepo) GetExercisesByActivityId(activityID uint) ([]*GymExercise, error) {
-	var gymExercise []*GymExercise
-	result := r.DB.Where("activity_id = ?", activityID).Order("set_number asc").Find(&gymExercise)
-	return gymExercise, result.Error
-}
-
-// UpdateExercise updates a gym exercise in the database
-func (r *GymExerciseRepo) UpdateExercise(gymExercise *GymExercise) error {
-	result := r.DB.Model(&GymExercise{}).Updates(gymExercise)
-	return result.Error
+	var gymExercises []*GymExercise
+	// Order by the main sort number for the workout flow
+	result := r.DB.Where("activity_id = ?", activityID).Order("sort_number asc").Find(&gymExercises)
+	return gymExercises, result.Error
 }
 
 // CountByActivityID counts how many exercises exist for a specific activity.
-func (r *GymExerciseRepo) CountByActivityID(activityID uint64) (int64, error) {
+func (r *GymExerciseRepo) CountByActivityID(activityID uint) (int64, error) {
 	var count int64
 	err := r.DB.Model(&GymExercise{}).Where("activity_id = ?", activityID).Count(&count).Error
 	if err != nil {

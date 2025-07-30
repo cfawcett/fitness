@@ -1,0 +1,8 @@
+{{- /* File: exercise-list-content.html */ -}}
+{{ range .RenderableBlocks }}
+{{ if eq (len .Exercises) 1 }}
+{{ template "_normal-exercise-block.html" (dict "Block" . "AllExercises" $.AllExercises "ActivityID" $.ActivityID) }}
+{{ else }}
+{{ template "_superset_block.html" (dict "Block" . "AllExercises" $.AllExercises "ActivityID" $.ActivityID) }}
+{{ end }}
+{{ end }}

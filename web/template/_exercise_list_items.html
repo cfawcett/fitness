@@ -1,23 +1,52 @@
+{{- /* File: _exercise_list_items.html
+Expects: .Exercises, .ActivityID, .SourceExerciseID (can be empty)
+*/ -}}
+
 {{ range .Exercises }}
-    <div class="flex items-center justify-between p-2 rounded-lg hover:bg-zinc-700/80 transition-colors group mx-2">
-        <div hx-get="/exercise-info/{{.ID}}?activityID={{$.ActivityID}}"
-             hx-target="#exercise-list-container"
-             hx-swap="innerHTML"
-             class="flex-grow cursor-pointer">
+{{ if $.SourceExerciseID }}
+<form hx-post="/activity/{{$.ActivityID}}/create-superset"
+      hx-target="#exercise-block-{{$.SourceExerciseID}}"
+      hx-swap="outerHTML"
+      class="block border-b border-zinc-700 last:border-b-0">
+
+    <input type="hidden" name="source_exercise_id" value="{{ $.SourceExerciseID }}">
+    <input type="hidden" name="new_exercise_definition_id" value="{{ .ID }}">
+
+    <button type="submit"
+            @click="show = false"
+            class="w-full flex items-center justify-between p-2 rounded-lg hover:bg-zinc-700/80 transition-colors group mx-2">
+
+        <div class="text-left">
             <p class="font-semibold text-zinc-200 group-hover:text-white">{{ .Name }}</p>
             <p class="text-xs text-zinc-400">{{ .PrimaryMuscleGroup }}</p>
         </div>
 
-        <button hx-post="/add-exercise-to-form/{{$.ActivityID}}"
-                hx-vals='{"exercise_id": {{.ID}}}'
-                hx-target="#exercise-blocks-container"
-                hx-swap="beforeend"
-                @click="show = false"
-                class="p-2 leading-none text-cyan-500 hover:text-cyan-300"
-                title="Quick Add to Workout">
+        <div class="p-2 leading-none text-cyan-500 hover:text-cyan-300" title="Add to Superset">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-        </button>
-    </div>
+        </div>
+    </button>
+</form>
 {{ else }}
-    <p class="p-4 text-center text-zinc-500">No exercises found.</p>
+<div class="flex items-center justify-between p-2 rounded-lg hover:bg-zinc-700/80 transition-colors group mx-2">
+    <div hx-get="/exercise-info/{{.ID}}?activityID={{$.ActivityID}}"
+         hx-target="#exercise-list-container"
+         hx-swap="innerHTML"
+         class="flex-grow cursor-pointer">
+        <p class="font-semibold text-zinc-200 group-hover:text-white">{{ .Name }}</p>
+        <p class="text-xs text-zinc-400">{{ .PrimaryMuscleGroup }}</p>
+    </div>
+
+    <button hx-post="/add-exercise-to-form/{{$.ActivityID}}"
+            hx-vals='{"exercise_id": {{.ID}}}'
+            hx-target="#exercise-blocks-container"
+            hx-swap="beforeend"
+            @click="show = false"
+            class="p-2 leading-none text-cyan-500 hover:text-cyan-300"
+            title="Quick Add to Workout">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+    </button>
+</div>
+{{ end }}
+{{ else }}
+<p class="p-4 text-center text-zinc-500">No exercises found.</p>
 {{ end }}

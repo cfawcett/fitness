@@ -1,0 +1,58 @@
+{{- /* File: _normal_exercise_block.html
+Expects: .Block (a RenderableBlock with exactly 1 exercise), .AllExercises, .ActivityID
+*/ -}}
+
+{{- /* Extract the single exercise from the block */ -}}
+{{ $gymExercise := (index .Block.Exercises 0) }}
+{{ $allExercises := .AllExercises }}
+{{ $activityID := .ActivityID }}
+
+<div id="exercise-block-{{$gymExercise.ID}}" class="exercise-block bg-zinc-800 p-4 border border-zinc-700 rounded-lg mb-4 relative">
+    <button type="button"
+            hx-delete="/gym-exercise/{{$gymExercise.ID}}"
+            hx-confirm="Are you sure you want to delete this exercise and all its sets?"
+            hx-target="closest .exercise-block"
+            hx-swap="outerHTML"
+            class="absolute top-2 right-2 text-zinc-500 hover:text-red-500 font-bold text-2xl leading-none"
+            title="Delete Exercise">
+        &times;
+    </button>
+
+    <label class="font-semibold text-zinc-300">Exercise:</label>
+    <select name="exercise_id_{{$gymExercise.ID}}"
+            required
+            hx-put="/gym-exercise/{{$gymExercise.ID}}"
+            hx-trigger="change"
+            hx-swap="none"
+            class="w-full p-2 bg-zinc-700 border border-zinc-600 rounded-md text-white focus:border-cyan-500 focus:ring-cyan-500">
+        <option value="" disabled>Select an exercise</option>
+        {{ range $allExercises }}
+        <option value="{{.ID}}" {{ if eq .ID $gymExercise.ExerciseDefinitionID }}selected{{ end }}>{{.Name}}</option>
+        {{ end }}
+    </select>
+
+    <h4 class="font-semibold mt-4 mb-2 text-zinc-300">Sets</h4>
+    <div id="sets-container-{{$gymExercise.ID}}" class="flex flex-col space-y-2">
+        {{- /* Loop through sets and render the partial for each */ -}}
+        {{ range $gymExercise.Sets }}
+        {{ template "_exercise-set.html" (dict "Set" . ) }}
+        {{ end }}
+    </div>
+
+    <div class="flex items-center justify-evenly mt-4">
+
+        <button type="button"
+                hx-post="/gym-exercise/{{$gymExercise.ID}}/add-set"
+                hx-target="#sets-container-{{$gymExercise.ID}}"
+                hx-swap="beforeend"
+                class="text-cyan-400 hover:text-cyan-300 font-semibold text-sm border-2 p-2 border-cyan-500 rounded-md hover:border-cyan-300 hover:text-cyan-300">
+            + Add Set
+        </button>
+        <button type="button"
+                hx-get="/ui/add-exercise-modal/{{$activityID}}?sourceExerciseID={{$gymExercise.ID}}"
+                hx-target="#modal-container"
+                class="text-cyan-400 hover:text-cyan-300 font-semibold text-sm border-2 p-2 border-cyan-500 rounded-md hover:border-cyan-300 hover:text-cyan-300">
+            + Add Superset
+        </button>
+    </div>
+</div>
