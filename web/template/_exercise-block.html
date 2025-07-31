@@ -1,4 +1,4 @@
-{{- /* Expects .Index, .GymExercise, .AllExercises, .ActivityID */ -}}
+{{- /* Expects .Index, .GymExercise, .AllExercises, .ActivityID, .ParentIDs */ -}}
 {{ $gymExercise := .GymExercise }}
 {{ $activityID := .ActivityID }}
 
@@ -13,31 +13,16 @@
               before:text-2xl
               before:opacity-50
             {{ end }}">
-    <p class="text-red-500 font-mono text-xs">DEBUG: SupersetWithID is [{{ .GymExercise.SupersetWithID }}]</p>
-
 
     <button type="button"
             hx-delete="/gym-exercise/{{$gymExercise.ID}}"
             hx-confirm="Are you sure you want to delete this exercise and all its sets?"
-            hx-target="closest .exercise-block"
-            hx-swap="outerHTML"
             class="absolute top-2 right-2 text-zinc-500 hover:text-red-500 font-bold text-2xl leading-none"
             title="Delete Exercise">
         &times;
     </button>
 
-    <label class="font-semibold text-zinc-300">Exercise:</label>
-    <select name="exercise_id"
-            required
-            hx-put="/gym-exercise/{{$gymExercise.ID}}"
-            hx-trigger="change"
-            hx-swap="none"
-            class="w-full p-2 bg-zinc-700 border border-zinc-600 rounded-md text-white focus:border-cyan-500 focus:ring-cyan-500">
-        <option value="" disabled>Select an exercise</option>
-        {{ range .AllExercises }}
-            <option value="{{.ID}}" {{ if eq .ID $gymExercise.ExerciseDefinitionID }}selected{{ end }}>{{.Name}}</option>
-        {{ end }}
-    </select>
+    <h3 class="text-xl font-bold text-cyan-400 mb-4">{{ $gymExercise.ExerciseDefinition.Name }}</h3>
 
     <h4 class="font-semibold mt-4 mb-2 text-zinc-300">Sets</h4>
     <div id="sets-container-{{$gymExercise.ID}}" class="flex flex-col space-y-2">
@@ -51,16 +36,19 @@
                 hx-post="/gym-exercise/{{$gymExercise.ID}}/add-set"
                 hx-target="#sets-container-{{$gymExercise.ID}}"
                 hx-swap="beforeend"
-                class="text-cyan-400 hover:text-cyan-300 font-semibold mt-3 text-sm border-2 p-2 border-cyan-500 rounded-md hover:border-cyan-300 hover:text-cyan-300">
+                class="text-cyan-400 hover:text-cyan-300 font-semibold mt-3 text-sm border-2 p-2 border-cyan-500 rounded-md hover:border-cyan-300">
             + Add Set
         </button>
 
-        <button type="button"
-                hx-get="/ui/add-exercise-modal/{{$activityID}}?sourceExerciseID={{$gymExercise.ID}}"
-                hx-target="#modal-container"
-                hx-swap="innerHTML"
-                class="text-cyan-400 hover:text-cyan-300 font-semibold mt-3 text-sm border-2 p-2 border-cyan-500 rounded-md hover:border-cyan-300 hover:text-cyan-300">
-            + Add Superset
-        </button>
+        {{/* This button only appears if the exercise is NOT already a parent */}}
+        {{ if not (index .ParentIDs $gymExercise.ID) }}
+            <button type="button"
+                    hx-get="/ui/add-exercise-modal/{{$activityID}}?sourceExerciseID={{$gymExercise.ID}}"
+                    hx-target="#modal-container"
+                    hx-swap="innerHTML"
+                    class="text-cyan-400 hover:text-cyan-300 font-semibold mt-3 text-sm border-2 p-2 border-cyan-500 rounded-md hover:border-cyan-300">
+                + Add Superset
+            </button>
+        {{ end }}
     </div>
 </div>

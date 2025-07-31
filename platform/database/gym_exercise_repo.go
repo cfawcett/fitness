@@ -93,16 +93,27 @@ func (r *GymExerciseRepo) CountByActivityID(activityID uint64) (int64, error) {
 // DeleteExercise deletes a GymExercise and all of its child sets in a transaction.
 func (r *GymExerciseRepo) DeleteExercise(id uint) error {
 	return r.DB.Transaction(func(tx *gorm.DB) error {
-		// First, delete all associated sets.
+		// 1. Check if the exercise we are deleting has a child.
+		var childExercise GymExercise
+		err := tx.Where("superset_with_id = ?", id).First(&childExercise).Error
+
+		// If a child was found...
+		if err == nil {
+			// 2. Promote the child by removing its link to the parent.
+			if err := tx.Model(&childExercise).Update("superset_with_id", nil).Error; err != nil {
+				return err
+			}
+		} else if err != gorm.ErrRecordNotFound {
+			// If there was an actual error (not just "not found"), return it.
+			return err
+		}
+
+		// 3. Now, delete all sets belonging to the exercise being deleted.
 		if err := tx.Where("gym_exercise_id = ?", id).Delete(&GymSet{}).Error; err != nil {
 			return err
 		}
 
-		// Then, delete the exercise itself.
-		if err := tx.Delete(&GymExercise{}, id).Error; err != nil {
-			return err
-		}
-
-		return nil
+		// 4. Finally, delete the exercise itself.
+		return tx.Delete(&GymExercise{}, id).Error
 	})
 }

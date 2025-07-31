@@ -418,7 +418,6 @@ func AddSupersetFromModalHandler(
 	}
 }
 
-// Add this new handler
 func RenderAllExerciseBlocksHandler(activityRepo *database.ActivityRepo, exerciseRepo *database.ExerciseRepo) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		activityID, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
@@ -427,7 +426,6 @@ func RenderAllExerciseBlocksHandler(activityRepo *database.ActivityRepo, exercis
 			return
 		}
 
-		// Use the same reliable, ordered query
 		activity, err := activityRepo.GetActivityByID(uint(activityID))
 		if err != nil {
 			ctx.String(http.StatusNotFound, "Activity not found")
@@ -435,10 +433,19 @@ func RenderAllExerciseBlocksHandler(activityRepo *database.ActivityRepo, exercis
 		}
 		allExercises, _ := exerciseRepo.GetExerciseList()
 
-		// Render a new partial that just contains the loop
+		// ✅ NEW: Create a map to track which exercises are parents
+		parentIDs := make(map[uint]bool)
+		for _, ex := range activity.GymExercises {
+			if ex.SupersetWithID != nil {
+				parentIDs[*ex.SupersetWithID] = true
+			}
+		}
+
+		// ✅ NEW: Pass the parentIDs map to the template
 		ctx.HTML(http.StatusOK, "_all-exercise-blocks.html", gin.H{
 			"Activity":     activity,
 			"AllExercises": allExercises,
+			"ParentIDs":    parentIDs, // Pass the new map
 		})
 	}
 }
@@ -629,16 +636,18 @@ func DeleteSetHandler(gymSetRepo *database.GymSetRepo) gin.HandlerFunc {
 }
 
 // DeleteExerciseHandler handles deleting an exercise and all its sets.
-// Route: DELETE /gym-exercise/:id
 func DeleteExerciseHandler(gymExerciseRepo *database.GymExerciseRepo) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		exerciseID, _ := strconv.ParseUint(ctx.Param("id"), 10, 64)
 
+		// This now calls our new, smarter delete function.
 		if err := gymExerciseRepo.DeleteExercise(uint(exerciseID)); err != nil {
 			ctx.String(http.StatusInternalServerError, "Failed to delete exercise")
 			return
 		}
 
+		// ✅ Instead of returning nothing, trigger a refresh of the list.
+		ctx.Header("HX-Trigger", "refreshExerciseList")
 		ctx.Status(http.StatusOK)
 	}
 }

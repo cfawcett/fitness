@@ -29,11 +29,11 @@
             <div class="space-y-4">
                 {{/* ✅ FIX: Assign the group to a variable $group */}}
                 {{ range $group := .SupersetGroups }}
-                    <div class="rounded-lg bg-zinc-800 border border-zinc-700 overflow-hidden">
+                    <div class="rounded-lg bg-zinc-800 border border-cyan-700 overflow-hidden">
                         {{/* Now loop over the exercises within $group */}}
                         {{ range $index, $exercise := $group.Exercises }}
                             <div class="
-                                {{ if gt $index 0 }} border-t-2 border-dashed border-zinc-700/50 pt-4 {{ end }}
+                                {{ if gt $index 0 }} border-t-2 border-dashed border-cyan-700/50 pt-4 {{ end }}
                                 p-4
                             ">
                                 {{/* ✅ FIX: Check the length of the $group's exercises */}}
