@@ -42,10 +42,10 @@
             </div>
             <hr class="my-4 border-zinc-700">
 
-            <div id="exercise-blocks-container">
-                {{ range $index, $gymExercise := .Activity.GymExercises }}
-                    {{ template "_exercise-block.html" (dict "Index" $index "GymExercise" $gymExercise "AllExercises" $.AllExercises "ActivityID" $.Activity.ID) }}
-                {{ end }}
+            <div id="exercise-blocks-container"
+                 hx-get="/ui/activity/{{.Activity.ID}}/exercise-blocks"
+                 hx-trigger="load, refreshExerciseList from:body"
+                 hx-swap="innerHTML">
             </div>
 
             <button type="button"

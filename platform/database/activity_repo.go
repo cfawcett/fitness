@@ -3,7 +3,6 @@ package database
 import (
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
-	"time"
 )
 
 type ActivityRepo struct {
@@ -34,14 +33,23 @@ func (r *ActivityRepo) GetActivitiesByUserID(userID uint) ([]*Activity, error) {
 // GetActivityByID returns the activity based on its database id
 func (r *ActivityRepo) GetActivityByID(id uint) (*Activity, error) {
 	var activity Activity
-	result := r.DB.
-		Preload("GymExercises.Sets").
+
+	err := r.DB.
+		// Preload GymExercises and all their fields
+		Preload("GymExercises", func(db *gorm.DB) *gorm.DB {
+			// Also ensure they are sorted by the order you set
+			return db.Order("gym_exercises.sort_number ASC")
+		}).
+		// Preload the sets for each of those exercises
+		Preload("GymExercises.Sets", func(db *gorm.DB) *gorm.DB {
+			return db.Order("gym_sets.set_number ASC")
+		}).
+		// Preload the definition for each exercise to get its name
 		Preload("GymExercises.ExerciseDefinition").
-		First(&activity, id)
-	if result.Error != nil {
-		return nil, result.Error
-	}
-	return &activity, nil
+		// Find the top-level activity
+		First(&activity, id).Error
+
+	return &activity, err
 }
 
 // UpdateActivityStatus updates the status of a specific activity.
@@ -112,56 +120,79 @@ func (r *ActivityRepo) DeleteActivity(activityID uint) error {
 	})
 }
 
-// CreateDraftCopy makes a deep copy of an activity and its children.
+// CreateDraftCopy performs a deep copy of an activity and all its children,
+// creating a new draft version. It correctly remaps superset links.
 func (r *ActivityRepo) CreateDraftCopy(originalID uint) (uint, error) {
-	var originalActivity Activity
-	// Load the original activity with all its children
-	if err := r.DB.Preload("GymExercises.Sets").First(&originalActivity, originalID).Error; err != nil {
-		return 0, err
-	}
-
 	var draftID uint
+
+	// Use a transaction to ensure all or nothing is committed
 	err := r.DB.Transaction(func(tx *gorm.DB) error {
-		// Create the new draft activity
-		draftActivity := Activity{
-			UserID:             originalActivity.UserID,
-			Type:               originalActivity.Type,
-			ActivityTime:       time.Now(),
-			Name:               originalActivity.Name,
-			Status:             StatusDraft,
-			OriginalActivityID: &originalActivity.ID,
-			Notes:              originalActivity.Notes,
+		// 1. Load the original activity with all its relationships
+		var originalActivity Activity
+		if err := tx.Preload("GymExercises.Sets").First(&originalActivity, originalID).Error; err != nil {
+			return err
 		}
+
+		// 2. Create the new draft Activity shell
+		draftActivity := originalActivity
+		draftActivity.ID = 0 // Setting ID to 0 tells GORM to create a new record
+		draftActivity.Status = StatusDraft
+		draftActivity.OriginalActivityID = &originalActivity.ID
+		draftActivity.GymExercises = nil // Clear associations to avoid GORM conflicts
+
 		if err := tx.Create(&draftActivity).Error; err != nil {
 			return err
 		}
-		draftID = draftActivity.ID // Store the new ID
+		draftID = draftActivity.ID
 
-		// Copy each exercise and its sets
+		// 3. Create a map to track old exercise IDs to their new IDs
+		oldToNewExerciseIDMap := make(map[uint]uint)
+
+		// 4. First Pass: Copy all exercises and their sets.
+		// We do this first to generate all the new IDs.
 		for _, originalExercise := range originalActivity.GymExercises {
-			draftExercise := GymExercise{
-				ActivityID:           draftID, // Link to the new draft activity
-				ExerciseDefinitionID: originalExercise.ExerciseDefinitionID,
-				SortNumber:           originalExercise.SortNumber,
+			newExercise := originalExercise
+			newExercise.ID = 0
+			newExercise.ActivityID = draftActivity.ID
+			newExercise.SupersetWithID = nil // IMPORTANT: Keep this nil for now
+			newExercise.Sets = nil
+
+			// Copy all sets for this exercise
+			for _, originalSet := range originalExercise.Sets {
+				newSet := originalSet
+				newSet.ID = 0
+				newExercise.Sets = append(newExercise.Sets, newSet)
 			}
-			if err := tx.Create(&draftExercise).Error; err != nil {
+
+			// Create the new exercise and its sets
+			if err := tx.Create(&newExercise).Error; err != nil {
 				return err
 			}
 
-			for _, originalSet := range originalExercise.Sets {
-				draftSet := GymSet{
-					GymExerciseID: draftExercise.ID, // Link to the new draft exercise
-					SetNumber:     originalSet.SetNumber,
-					Reps:          originalSet.Reps,
-					WeightKG:      originalSet.WeightKG,
-				}
-				if err := tx.Create(&draftSet).Error; err != nil {
+			// Store the mapping from the old ID to the new one
+			oldToNewExerciseIDMap[originalExercise.ID] = newExercise.ID
+		}
+
+		// 5. Second Pass: Update the new exercises with the correct superset links.
+		// Now we have all the new IDs in our map.
+		for _, originalExercise := range originalActivity.GymExercises {
+			// If the original had a superset link...
+			if originalExercise.SupersetWithID != nil {
+				// Find the new ID for the original exercise
+				newExerciseID := oldToNewExerciseIDMap[originalExercise.ID]
+				// Find the new ID for its parent exercise
+				newParentID := oldToNewExerciseIDMap[*originalExercise.SupersetWithID]
+
+				// Update the new exercise with the new parent ID
+				if err := tx.Model(&GymExercise{}).Where("id = ?", newExerciseID).Update("superset_with_id", newParentID).Error; err != nil {
 					return err
 				}
 			}
 		}
-		return nil
+
+		return nil // Commit the transaction
 	})
+
 	return draftID, err
 }
 

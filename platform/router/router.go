@@ -168,4 +168,7 @@ func (h *Handler) registerRoutes(auth *authenticator.Authenticator) {
 	h.Router.GET("/ui/exercise-list-view/:id", middleware.IsAuthenticated, workout.ExerciseListViewHandler(h.ExerciseRepo, h.UserRepo))
 	h.Router.GET("/exercise-info/:exerciseID", middleware.IsAuthenticated, workout.ExerciseInfoHandler(h.ExerciseRepo, h.GymSetRepo, h.UserRepo, h.ActivityRepo))
 	h.Router.POST("/add-exercise-to-form/:id", middleware.IsAuthenticated, workout.AddExerciseToFormHandler(h.GymExerciseRepo, h.GymSetRepo, h.ExerciseRepo))
+
+	h.Router.GET("/ui/activity/:id/exercise-blocks", workout.RenderAllExerciseBlocksHandler(h.ActivityRepo, h.ExerciseRepo))
+
 }

@@ -13,6 +13,8 @@
               before:text-2xl
               before:opacity-50
             {{ end }}">
+    <p class="text-red-500 font-mono text-xs">DEBUG: SupersetWithID is [{{ .GymExercise.SupersetWithID }}]</p>
+
 
     <button type="button"
             hx-delete="/gym-exercise/{{$gymExercise.ID}}"

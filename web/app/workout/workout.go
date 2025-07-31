@@ -93,45 +93,45 @@ func ViewHandler(activityRepo *database.ActivityRepo, gymSetRepo *database.GymSe
 			return
 		}
 
-		activity, err := activityRepo.GetActivityByID(uint(id))
+		activity, err := activityRepo.GetActivityByID(uint(id)) // IMPORTANT: Ensure this query ORDERS exercises by SortNumber
 		if err != nil {
 			ctx.String(http.StatusNotFound, "Workout not found")
 			return
 		}
 
-		// --- NEW LOGIC STARTS HERE ---
+		// --- NEW SUPERSER GROUPING LOGIC ---
 
-		// 1. Define the new struct that the template needs, including our flag.
-		type viewExercise struct {
-			database.GymExercise
-			IsSupersetParent bool
+		type SupersetGroup struct {
+			Exercises []database.GymExercise
 		}
 
-		// 2. Create a map to easily find which exercises are parents of a superset.
-		supersetChildren := make(map[uint]bool)
-		for _, ex := range activity.GymExercises {
-			if ex.SupersetWithID != nil {
-				// Mark the parent ID as having a superset child.
-				supersetChildren[*ex.SupersetWithID] = true
+		var groupedExercises []SupersetGroup
+		if len(activity.GymExercises) > 0 {
+			// Start the first group
+			currentGroup := SupersetGroup{Exercises: []database.GymExercise{activity.GymExercises[0]}}
+
+			for i := 1; i < len(activity.GymExercises); i++ {
+				exercise := activity.GymExercises[i]
+				// If the exercise is a superset of the PREVIOUS one, add it to the current group.
+				if exercise.SupersetWithID != nil && *exercise.SupersetWithID == activity.GymExercises[i-1].ID {
+					currentGroup.Exercises = append(currentGroup.Exercises, exercise)
+				} else {
+					// Otherwise, the last group is finished. Add it to our list.
+					groupedExercises = append(groupedExercises, currentGroup)
+					// And start a new group with the current exercise.
+					currentGroup = SupersetGroup{Exercises: []database.GymExercise{exercise}}
+				}
 			}
+			// Add the very last group
+			groupedExercises = append(groupedExercises, currentGroup)
 		}
 
-		// 3. Build the new slice for the template with the IsSupersetParent flag set correctly.
-		var viewExercises []viewExercise
-		for _, ex := range activity.GymExercises {
-			viewExercises = append(viewExercises, viewExercise{
-				GymExercise:      ex,
-				IsSupersetParent: supersetChildren[ex.ID],
-			})
-		}
+		// --- END OF NEW LOGIC ---
 
-		// --- NEW LOGIC ENDS HERE ---
-
-		// 4. Pass the NEW `viewExercises` slice to the template.
 		ctx.HTML(http.StatusOK, "view-workout.html", gin.H{
-			"Activity":      activity,
-			"User":          sessionUser,
-			"ViewExercises": viewExercises, // This is the data the template needs
+			"Activity":       activity,
+			"User":           sessionUser,
+			"SupersetGroups": groupedExercises, // Pass the new grouped data
 		})
 	}
 }
@@ -401,22 +401,44 @@ func AddSupersetFromModalHandler(
 			ExerciseDefinitionID: uint(newExerciseDefID), // We have the ID now!
 		}
 		gymExerciseRepo.CreateGymExercise(newGymExercise)
-
-		// 4. Create the first set
+		// 4. Create first set
 		firstSet := &database.GymSet{GymExerciseID: newGymExercise.ID, SetNumber: 1}
 		gymSetRepo.CreateGymSet(firstSet)
-		newGymExercise.Sets = []database.GymSet{*firstSet}
 
-		// We need to fetch the full definition to pass to the template
-		definition, _ := exerciseRepo.GetExerciseByID(uint(newExerciseDefID))
-		newGymExercise.ExerciseDefinition = *definition
+		// --- NEW LOGIC ---
+		// Close the modal by removing it from the DOM.
+		ctx.Header("HX-Retarget", "#modal-container")
+		ctx.Header("HX-Reswap", "innerHTML")
 
-		// 5. Return the new exercise block partial
+		// Trigger a custom event on the body tag to signal a refresh is needed.
+		ctx.Header("HX-Trigger", "refreshExerciseList")
+
+		// Return empty content to swap into the modal container, effectively closing it.
+		ctx.Status(http.StatusOK)
+	}
+}
+
+// Add this new handler
+func RenderAllExerciseBlocksHandler(activityRepo *database.ActivityRepo, exerciseRepo *database.ExerciseRepo) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		activityID, err := strconv.ParseUint(ctx.Param("id"), 10, 64)
+		if err != nil {
+			ctx.String(http.StatusBadRequest, "Invalid activity ID")
+			return
+		}
+
+		// Use the same reliable, ordered query
+		activity, err := activityRepo.GetActivityByID(uint(activityID))
+		if err != nil {
+			ctx.String(http.StatusNotFound, "Activity not found")
+			return
+		}
 		allExercises, _ := exerciseRepo.GetExerciseList()
-		ctx.HTML(http.StatusOK, "_exercise-block.html", gin.H{
-			"GymExercise":  newGymExercise,
+
+		// Render a new partial that just contains the loop
+		ctx.HTML(http.StatusOK, "_all-exercise-blocks.html", gin.H{
+			"Activity":     activity,
 			"AllExercises": allExercises,
-			"ActivityID":   sourceExercise.ActivityID,
 		})
 	}
 }
