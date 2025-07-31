@@ -1,3 +1,11 @@
-{{ range $index, $gymExercise := .Activity.GymExercises }}
-    {{ template "_exercise-block.html" (dict "Index" $index "GymExercise" $gymExercise "AllExercises" $.AllExercises "ActivityID" $.Activity.ID "ParentIDs" $.ParentIDs) }}
-{{ end }}
+<div class="space-y-4">
+    {{ range $group := .SupersetGroups }}
+        <div class="bg-zinc-800 border border-cyan-700 rounded-lg overflow-hidden">
+            {{ range $index, $gymExercise := $group.Exercises }}
+                <div class="{{ if gt $index 0 }} border-t-2 border-dashed border-cyan-700/50 {{ end }}">
+                    {{ template "_exercise-block.html" (dict "GymExercise" $gymExercise "AllExercises" $.AllExercises "ActivityID" $.ActivityID "ParentIDs" $.ParentIDs) }}
+                </div>
+            {{ end }}
+        </div>
+    {{ end }}
+</div>

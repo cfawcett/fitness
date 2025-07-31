@@ -1,13 +1,13 @@
-{{- /* Expects .Index, .GymExercise, .AllExercises, .ActivityID, .ParentIDs */ -}}
+{{- /* Expects .GymExercise, .AllExercises, .ActivityID, .ParentIDs */ -}}
 {{ $gymExercise := .GymExercise }}
 {{ $activityID := .ActivityID }}
 
-<div id="exercise-block-{{$gymExercise.ID}}" class="exercise-block bg-zinc-800 p-4 border border-zinc-700 rounded-lg mb-4 relative
+<div id="exercise-block-{{$gymExercise.ID}}" class="exercise-block p-4 relative
             {{ if $gymExercise.SupersetWithID }}
               is-superset-child
               before:content-['🔗']
               before:absolute
-              before:top-[-1.2rem]
+              before:top-[-0.5rem] /* Adjusted position for new layout */
               before:left-1/2
               before:-translate-x-1/2
               before:text-2xl
@@ -31,22 +31,21 @@
         {{ end }}
     </div>
 
-    <div class="flex items-center justify-evenly">
+    <div class="flex items-center justify-evenly mt-4">
         <button type="button"
                 hx-post="/gym-exercise/{{$gymExercise.ID}}/add-set"
                 hx-target="#sets-container-{{$gymExercise.ID}}"
                 hx-swap="beforeend"
-                class="text-cyan-400 hover:text-cyan-300 font-semibold mt-3 text-sm border-2 p-2 border-cyan-500 rounded-md hover:border-cyan-300">
+                class="text-cyan-400 hover:text-cyan-300 font-semibold text-sm border-2 p-2 border-cyan-500 rounded-md hover:border-cyan-300">
             + Add Set
         </button>
 
-        {{/* This button only appears if the exercise is NOT already a parent */}}
         {{ if not (index .ParentIDs $gymExercise.ID) }}
             <button type="button"
                     hx-get="/ui/add-exercise-modal/{{$activityID}}?sourceExerciseID={{$gymExercise.ID}}"
                     hx-target="#modal-container"
                     hx-swap="innerHTML"
-                    class="text-cyan-400 hover:text-cyan-300 font-semibold mt-3 text-sm border-2 p-2 border-cyan-500 rounded-md hover:border-cyan-300">
+                    class="text-cyan-400 hover:text-cyan-300 font-semibold text-sm border-2 p-2 border-cyan-500 rounded-md hover:border-cyan-300">
                 + Add Superset
             </button>
         {{ end }}

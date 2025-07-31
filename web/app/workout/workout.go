@@ -427,25 +427,43 @@ func RenderAllExerciseBlocksHandler(activityRepo *database.ActivityRepo, exercis
 		}
 
 		activity, err := activityRepo.GetActivityByID(uint(activityID))
-		if err != nil {
-			ctx.String(http.StatusNotFound, "Activity not found")
-			return
-		}
+		// ... (error handling) ...
+
 		allExercises, _ := exerciseRepo.GetExerciseList()
 
-		// ✅ NEW: Create a map to track which exercises are parents
+		// --- NEW GROUPING LOGIC ---
+		type SupersetGroup struct {
+			Exercises []database.GymExercise
+		}
+		var groupedExercises []SupersetGroup
+		if len(activity.GymExercises) > 0 {
+			currentGroup := SupersetGroup{Exercises: []database.GymExercise{activity.GymExercises[0]}}
+			for i := 1; i < len(activity.GymExercises); i++ {
+				exercise := activity.GymExercises[i]
+				if exercise.SupersetWithID != nil && *exercise.SupersetWithID == activity.GymExercises[i-1].ID {
+					currentGroup.Exercises = append(currentGroup.Exercises, exercise)
+				} else {
+					groupedExercises = append(groupedExercises, currentGroup)
+					currentGroup = SupersetGroup{Exercises: []database.GymExercise{exercise}}
+				}
+			}
+			groupedExercises = append(groupedExercises, currentGroup)
+		}
+
 		parentIDs := make(map[uint]bool)
 		for _, ex := range activity.GymExercises {
 			if ex.SupersetWithID != nil {
 				parentIDs[*ex.SupersetWithID] = true
 			}
 		}
+		// --- END OF NEW LOGIC ---
 
-		// ✅ NEW: Pass the parentIDs map to the template
 		ctx.HTML(http.StatusOK, "_all-exercise-blocks.html", gin.H{
-			"Activity":     activity,
-			"AllExercises": allExercises,
-			"ParentIDs":    parentIDs, // Pass the new map
+			// ✅ Pass the new grouped data
+			"SupersetGroups": groupedExercises,
+			"AllExercises":   allExercises,
+			"ParentIDs":      parentIDs,
+			"ActivityID":     activityID, // Pass ActivityID for the modal buttons
 		})
 	}
 }
