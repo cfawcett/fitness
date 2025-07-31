@@ -1,46 +1,54 @@
 {{ template "header" . }}
-<body class="bg-zinc-900 text-zinc-200">
+
+<body class="bg-zinc-950 text-zinc-200">
 <div class="flex md:ml-64">
     <main id="content" class="flex-1 overflow-y-auto pb-40">
         <div class="p-4 md:p-6 max-w-4xl mx-auto">
-            <div class="flex items-start gap-4">
-                <div class="bg-cyan-900/50 p-3 rounded-lg text-cyan-400 mt-1">
-                    <svg class="size-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M8.09118 8H9.36418C9.72392 8.00873 10.0086 8.30725 10.0002 8.667V15.333C10.0086 15.6927 9.72392 15.9913 9.36418 16H8.09118C7.73144 15.9913 7.4468 15.6927 7.45518 15.333V14H5.63618C5.27644 13.9913 4.9918 13.6927 5.00018 13.333V10.667C4.9918 10.3073 5.27644 10.0087 5.63618 10H7.45518V8.667C7.4468 8.30725 7.73144 8.00873 8.09118 8Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path fill-rule="evenodd" clip-rule="evenodd" d="M15.9092 16H14.6362C14.2764 15.9913 13.9918 15.6927 14.0002 15.333V8.667C13.9918 8.30725 14.2764 8.00873 14.6362 8H15.9092C16.2689 8.00873 16.5536 8.30725 16.5452 8.667V10H18.3632C18.5361 10.0039 18.7004 10.0764 18.8199 10.2015C18.9393 10.3266 19.0042 10.4941 19.0002 10.667V13.333C19.0086 13.6927 18.7239 13.9913 18.3642 14H16.5452V15.333C16.5536 15.6927 16.2689 15.9913 15.9092 16Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                </div>
 
-                <div class="flex-grow">
-                    <div class="group relative flex items-center">
-                        <input type="text"
-                               name="name"
-                               value="{{ .Activity.Name }}"
-                               class="w-full rounded-lg bg-transparent p-2 -mx-2 text-3xl font-bold text-white focus:outline-none focus:bg-zinc-800/50 group-hover:bg-zinc-800/50 transition-colors placeholder:text-zinc-500"
-                               placeholder="Workout Name...">
+            <div class="bg-gradient-to-r from-cyan-500 to-blue-600 p-6 rounded-xl shadow-2xl shadow-cyan-500/20">
+                <div class="flex items-start gap-4">
+                    <div class="bg-black/20 p-3 rounded-lg text-white mt-1">
+                        <svg class="size-6" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M8.09118 8H9.36418C9.72392 8.00873 10.0086 8.30725 10.0002 8.667V15.333C10.0086 15.6927 9.72392 15.9913 9.36418 16H8.09118C7.73144 15.9913 7.4468 15.6927 7.45518 15.333V14H5.63618C5.27644 13.9913 4.9918 13.6927 5.00018 13.333V10.667C4.9918 10.3073 5.27644 10.0087 5.63618 10H7.45518V8.667C7.4468 8.30725 7.73144 8.00873 8.09118 8Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path fill-rule="evenodd" clip-rule="evenodd" d="M15.9092 16H14.6362C14.2764 15.9913 13.9918 15.6927 14.0002 15.333V8.667C13.9918 8.30725 14.2764 8.00873 14.6362 8H15.9092C16.2689 8.00873 16.5536 8.30725 16.5452 8.667V10H18.3632C18.5361 10.0039 18.7004 10.0764 18.8199 10.2015C18.9393 10.3266 19.0042 10.4941 19.0002 10.667V13.333C19.0086 13.6927 18.7239 13.9913 18.3642 14H16.5452V15.333C16.5536 15.6927 16.2689 15.9913 15.9092 16Z" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
 
-                        <div class="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5 text-zinc-400">
-                                <path d="m2.695 14.762-1.262 3.155a.5.5 0 0 0 .65.65l3.155-1.262a4 4 0 0 0 1.343-.886L17.5 5.501a2.121 2.121 0 0 0-3-3L3.58 13.42a4 4 0 0 0-.885 1.343Z" />
-                            </svg>
+                    <div class="flex-grow">
+                        <div class="group relative flex items-center">
+                            <input type="text"
+                                   name="name"
+                                   value="{{ .Activity.Name }}"
+                                   class="w-full rounded-lg bg-transparent p-2 -mx-2 text-3xl font-bold text-white focus:outline-none focus:bg-black/20 group-hover:bg-black/20 transition-colors placeholder:text-blue-100"
+                                   placeholder="Workout Name..."
+                                   hx-post="/activity/{{.Activity.ID}}/update-name"
+                                   hx-trigger="keyup changed delay:500ms"
+                                   hx-swap="none">
+
+                            <div class="absolute right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5 text-white/70">
+                                    <path d="m2.695 14.762-1.262 3.155a.5.5 0 0 0 .65.65l3.155-1.262a4 4 0 0 0 1.343-.886L17.5 5.501a2.121 2.121 0 0 0-3-3L3.58 13.42a4 4 0 0 0-.885 1.343Z" />
+                                </svg>
+                            </div>
                         </div>
-                    </div>
 
-                    <div class="mt-2 flex items-center gap-2 text-zinc-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5">
-                            <path fill-rule="evenodd" d="M5.75 2a.75.75 0 0 1 .75.75V4h7V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 18 6.75v8.5A2.75 2.75 0 0 1 15.25 18H4.75A2.75 2.75 0 0 1 2 15.25v-8.5A2.75 2.75 0 0 1 4.75 4H5V2.75A.75.75 0 0 1 5.75 2Zm-1 5.5h10.5a.75.75 0 0 0 0-1.5H4.75a.75.75 0 0 0 0 1.5Z" clip-rule="evenodd" />
-                        </svg>
-                        <p>{{ .Activity.ActivityTime.Format "Monday, Jan 2, 2006 at 3:04 PM" }}</p>
-                    </div>
-                    <div class="mt-6">
-                        <label for="workout-notes" class="text-lg font-semibold text-white">Workout Notes</label>
-                        <input type="text"
-                               id="workout-notes"
-                               name="notes"
-                               value="{{ .Activity.Notes }}"
-                               class="mt-2 w-full p-2 bg-zinc-800 border border-zinc-700 rounded-lg text-zinc-200 focus:border-cyan-500 focus:ring-cyan-500"
-                               placeholder="Add a note...">
+                        <div class="mt-2 flex items-center gap-2 text-blue-100">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" class="size-5">
+                                <path fill-rule="evenodd" d="M5.75 2a.75.75 0 0 1 .75.75V4h7V2.75a.75.75 0 0 1 1.5 0V4h.25A2.75 2.75 0 0 1 18 6.75v8.5A2.75 2.75 0 0 1 15.25 18H4.75A2.75 2.75 0 0 1 2 15.25v-8.5A2.75 2.75 0 0 1 4.75 4H5V2.75A.75.75 0 0 1 5.75 2Zm-1 5.5h10.5a.75.75 0 0 0 0-1.5H4.75a.75.75 0 0 0 0 1.5Z" clip-rule="evenodd" />
+                            </svg>
+                            <p>{{ .Activity.ActivityTime.Format "Monday, Jan 2, 2006 at 3:04 PM" }}</p>
+                        </div>
+                        <div class="mt-6">
+                            <label for="workout-notes" class="text-lg font-semibold text-white">Workout Notes</label>
+                            <input type="text"
+                                   id="workout-notes"
+                                   name="notes"
+                                   value="{{ .Activity.Notes }}"
+                                   class="mt-2 w-full p-2 bg-black/20 border border-white/20 rounded-lg text-white placeholder:text-blue-100 focus:border-white/50 focus:ring-white/50"
+                                   placeholder="Add a note...">
+                        </div>
                     </div>
                 </div>
             </div>
-            <hr class="my-4 border-zinc-700">
+
+            <div class="my-8"></div>
 
             <div id="exercise-blocks-container"
                  hx-get="/ui/activity/{{.Activity.ID}}/exercise-blocks"
@@ -52,25 +60,25 @@
                     hx-get="/ui/add-exercise-modal/{{.Activity.ID}}"
                     hx-target="#modal-container"
                     hx-swap="innerHTML"
-                    class="mt-4 p-3 bg-cyan-700/20 border-2 border-dashed border-cyan-700/50 rounded-lg text-cyan-300 hover:border-cyan-600 hover:bg-cyan-700/30 transition-colors font-semibold w-full">
+                    class="mt-4 p-3 bg-cyan-700/20 border-2 border-dashed border-cyan-700 rounded-lg text-cyan-300 hover:border-cyan-600 hover:bg-cyan-700/30 transition-colors font-semibold w-full">
                 + Add Exercise
             </button>
         </div>
     </main>
 </div>
 
-<div class="fixed bottom-[4.5rem] md:bottom-0 left-0 right-0 md:left-64 bg-zinc-800/80 backdrop-blur-sm border-t border-cyan-700 z-30">
+<div class="fixed bottom-[4.5rem] md:bottom-0 left-0 right-0 md:left-64 bg-zinc-900/80 backdrop-blur-sm border-t border-cyan-800 z-30">
     <div class="flex gap-4 p-4 max-w-4xl mx-auto">
         <button type="button"
                 hx-post="/activity/{{.Activity.ID}}/discard"
                 hx-confirm="Are you sure you want to discard this draft workout? This cannot be undone."
                 hx-target="body"
-                class="flex-1 bg-zinc-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-zinc-700 transition-colors">
-            Discard Workout
+                class="flex-1 bg-zinc-800 text-zinc-400 font-bold py-3 px-4 rounded-lg hover:bg-zinc-700 hover:text-zinc-200 transition-colors">
+            Discard
         </button>
         <button type="button"
                 hx-post="/activity/{{.Activity.ID}}/finish"
-                hx-include="[name='notes']"
+                hx-include="[name='notes'], [name='name']"
                 class="flex-1 bg-cyan-700 text-white font-bold py-3 px-4 rounded-lg hover:bg-cyan-600 transition-colors">
             Finish Workout
         </button>

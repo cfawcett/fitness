@@ -1,40 +1,43 @@
-{{- /* Expects a single .Set object passed as context */ -}}
-<div class="flex items-center gap-2">
-    <span class="w-8 text-center font-mono text-zinc-400">{{.Set.SetNumber}}</span>
+<div class="flex items-center gap-2 sm:gap-4">
+    <div class="flex size-8 shrink-0 items-center justify-center rounded-full bg-zinc-800 text-sm font-semibold text-zinc-400">
+        {{.Set.SetNumber}}
+    </div>
 
-    <input type="number"
-           name="reps"
-           value="{{.Set.Reps}}"
-           placeholder="Reps"
-           hx-put="/gym-set/{{.Set.ID}}"
-           hx-include="this, next input"
-           hx-trigger="keyup changed delay:200ms"
-           hx-swap="none"
-           required
-           class="p-2 w-full bg-zinc-700 border-zinc-600 rounded-md placeholder:text-zinc-500">
+    <div class="grid flex-1 justify-items-center">
+        <input type="number"
+               name="reps"
+               value="{{.Set.Reps}}"
+               hx-put="/gym-set/{{.Set.ID}}"
+               hx-include="next input"
+               hx-trigger="keyup changed delay:300ms"
+               hx-swap="none"
+               required
+               class="w-full bg-transparent p-0 text-center text-4xl font-bold text-white focus:outline-none sm:text-5xl">
+        <span class="text-sm font-semibold text-zinc-500">reps</span>
+    </div>
 
-    <span class="text-zinc-400">&times;</span>
+    <div class="text-2xl font-light text-zinc-700">&times;</div>
 
-    <input type="number"
-           step="0.25"
-           name="weight_kg"
-           value="{{.Set.WeightKG}}"
-           placeholder="Weight"
-           hx-put="/gym-set/{{.Set.ID}}"
-           hx-include="this, prev input"
-           hx-trigger="keyup changed delay:500ms"
-           hx-swap="none"
-           required
-           class="p-2 w-full bg-zinc-700 border-zinc-600 rounded-md placeholder:text-zinc-500">
-
-    <span class="text-zinc-400">kg</span>
+    <div class="grid flex-1 justify-items-center">
+        <input type="number"
+               step="0.25"
+               name="weight_kg"
+               value="{{.Set.WeightKG}}"
+               hx-put="/gym-set/{{.Set.ID}}"
+               hx-include="prev input"
+               hx-trigger="keyup changed delay:300ms"
+               hx-swap="none"
+               required
+               class="w-full bg-transparent p-0 text-center text-4xl font-bold text-cyan-400 focus:outline-none sm:text-5xl">
+        <span class="text-sm font-semibold text-zinc-500">kg</span>
+    </div>
 
     <button type="button"
             hx-delete="/gym-set/{{.Set.ID}}"
             hx-target="closest .flex"
             hx-swap="outerHTML"
             title="Remove Set"
-            class="text-red-500 hover:text-red-400">
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 12H6"/></svg>
+            class="shrink-0 text-zinc-600 transition-colors hover:text-red-500">
+        <svg class="size-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M6.28 5.22a.75.75 0 0 0-1.06 1.06L8.94 10l-3.72 3.72a.75.75 0 1 0 1.06 1.06L10 11.06l3.72 3.72a.75.75 0 1 0 1.06-1.06L11.06 10l3.72-3.72a.75.75 0 0 0-1.06-1.06L10 8.94 6.28 5.22Z" /></svg>
     </button>
 </div>
